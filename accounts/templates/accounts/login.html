@@ -1,0 +1,30 @@
+{% extends "base_blank.html" %}
+
+{% block title %} Login {% endblock %}
+
+{% block content_blank %}
+
+    <div class="row ">
+
+        <div class="col-md-8 mx-auto text-center my-3">
+           <p></p>
+            <p></p>
+            <div class="col"><h4 class=" text-center my-2">Risk Stress Test
+                Tools</h4>
+            </div>
+            <p></p>
+            <form action="" method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+
+                <div class="form-group row my-4">
+                    <div class="col-sm-offset-10">
+                        <button type="submit" class="btn btn-primary">Login
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+{% endblock %}

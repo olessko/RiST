@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <p></p>
+    <div class="row justify-content-md-center">
+        <ul class="nav gap-2">
+            {#        <li class="nav-item">#}
+            {#            <a class="btn-dark btn-primary btn-sm" href="new_project/" role="button">new#}
+            {#                project</a>#}
+            {#        </li>#}
+            <button type="button" class="btn-dark btn-primary btn-sm"
+                    data-bs-toggle="modal"
+                    data-bs-target="#NewProjectModal">
+                load project from file
+            </button>
+        </ul>
+
+        <table class="table">
+            <thead>
+            <tr>
+                <th scope="col">Project id</th>
+                <th scope="col">Description</th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for item in table_list %}
+                <tr>
+                    <th scope="row">{{ item.id }} </th>
+                    <td>{{ item.name }}</td>
+                    <td>
+                        <a class="btn btn-secondary btn-sm-dark"
+                           href="optimistic_scenario/{{ item.id }}/"
+                           role="button">optimistic_scenario</a>
+                    </td>
+                    <td>
+                        <a class="btn btn-secondary btn-sm-dark"
+                           href="pesimistic_scenario/{{ item.id }}/"
+                           role="button">pesimistic_scenario</a>
+                    </td>
+                    <td>
+                        <a class="btn btn-secondary btn-sm-dark"
+                           href="climate_conditions_with_project/{{ item.id }}/"
+                           role="button">conditions (with project)</a>
+                    </td>
+                    <td>
+                        <a class="btn btn-secondary btn-sm-dark"
+                           href="climate_conditions_without_project/{{ item.id }}/"
+                           role="button">conditions (without project)</a>
+                    </td>
+                    <td>
+                        <a class="btn btn-secondary btn-sm-dark"
+                           href="calculations1/{{ item.id }}/"
+                           role="button">Calculations I</a>
+                    </td>
+                    <td>
+                        <a class="btn btn-secondary btn-sm-dark"
+                           href="delete_project/{{ item.id }}/"
+                           role="button">Delete</a>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+        <!-- Modal -->
+    <div class="modal fade" id="NewProjectModal" tabindex="-1"
+         aria-labelledby="NewProjectLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="NewProjectLabel">New project</h5>
+                    <button type="button" class="btn-close"
+                            data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="load_project/" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <input type="file" name="project_file" accept=".xls,.xlsx">
+{#                        {{ form.as_p }}#}
+                        <div class="modal-footer">
+                            <div class="form-group row my-4">
+                                <div class="col-sm-offset-10 mx-auto">
+                                    <button type="submit"
+                                            class="btn-dark btn-primary">Read
+                                        data from file
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-dark btn-secondary"
+                                    data-bs-dismiss="modal">Close
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

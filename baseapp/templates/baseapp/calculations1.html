@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <p></p>
+    <h2>SIMULATION - change in average climate conditions WITH project</h2>
+    <p></p>
+    {{ climate_conditions_with_project_html|safe }}
+    <p></p>
+    {{ climate_conditions_with_project_table_html|safe }}
+
+    <p></p>
+    <h2>SIMULATION - change in average climate conditions WITHOUT project</h2>
+    <p></p>
+    {{ climate_conditions_without_project_html|safe }}
+    <p></p>
+    {{ climate_conditions_without_project_table_html|safe }}
+
+
+{% endblock %}

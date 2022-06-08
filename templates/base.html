@@ -1,0 +1,21 @@
+{% extends "base_blank.html" %}
+
+{#{% block title %} Login {% endblock %}#}
+
+{% block content_blank %}
+
+    <div class="container">
+        <ul class="nav justify-content-end gap-2">
+            <div class="col"><h4 class=" text-left my-2">Risk Stress Test
+                Tools</h4>
+            </div>
+            <li class="nav-item">
+                <a class="btn-dark btn-primary btn-sm" href="accounts/logout/"
+                   role="button">logout</a>
+            </li>
+
+        </ul>
+        {% block content %}{% endblock %}
+    </div>
+
+{% endblock %}
