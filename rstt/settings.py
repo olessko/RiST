@@ -47,7 +47,8 @@ DEBUG = True
 PRODACTION_MODE = False
 
 
-ALLOWED_HOSTS = ['127.0.0.1']
+ALLOWED_HOSTS = ['127.0.0.1',
+                 'risk-stress-test-tools.herokuapp.com']
 
 
 # Application definition
