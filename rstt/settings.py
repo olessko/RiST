@@ -11,13 +11,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
 from pathlib import Path
-# import environ
-
-
-# env = environ.Env(
-#     # set casting, default value
-#     DEBUG=(bool, False)
-# )
+from os import environ as env
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -42,9 +36,9 @@ SECRET_KEY = 'django-insecure-k2$n2pnd9^3d%14pxn)#4-#u9g&&e%fh39k(cq!9yl1+_6zy)r
 # SECRET_KEY = env.str('SECRET_KEY')
 
 # DEBUG = env.bool('DEBUG', True)
-# PRODACTION_MODE = env.bool('PRODACTION_MODE', False)
-DEBUG = True
-PRODACTION_MODE = False
+PRODACTION_MODE = env.get('PRODACTION_MODE', False)
+DEBUG = env.get('DEBUG', True)
+# PRODACTION_MODE = False
 # PRODACTION_MODE = 'heroku'
 
 
