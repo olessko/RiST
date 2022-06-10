@@ -44,7 +44,8 @@ SECRET_KEY = 'django-insecure-k2$n2pnd9^3d%14pxn)#4-#u9g&&e%fh39k(cq!9yl1+_6zy)r
 # DEBUG = env.bool('DEBUG', True)
 # PRODACTION_MODE = env.bool('PRODACTION_MODE', False)
 DEBUG = True
-PRODACTION_MODE = 'heroku'
+PRODACTION_MODE = False
+# PRODACTION_MODE = 'heroku'
 
 
 ALLOWED_HOSTS = ['127.0.0.1',

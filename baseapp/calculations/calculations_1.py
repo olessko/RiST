@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from ..cruid import climate_conditions_from_database, \
     sensitivity_analysis_from_database
 
@@ -15,21 +17,23 @@ def calculations_1_1(project_object, with_project):
             axis=1)
     del df['impact']
     del df['sa']
-    df_cc = df.groupby(by=['type value', 'cost']).mean()
+    df_cc = df.groupby(by=['type value', 'cost']).sum()
 
     df = df_cc.copy()
     for count, _date in enumerate(date_index):
         df.rename(columns={_date: f'date{count}'}, inplace=True)
 
     start_year = project_object.start_year
-    for year in range(start_year, start_year+project_object.lifetime):
+    for year in range(start_year, start_year + project_object.lifetime):
         if year <= date_index[0]:
             k = (year - start_year) / (date_index[0] - start_year)
             k_id = 'date0'
         else:
             k = (year - start_year) / (date_index[1] - start_year)
             k_id = 'date1'
-        df[year] = df.apply(lambda x: k * x[k_id], axis=1)
+        df[year] = df.apply(
+            lambda x: (Decimal(k) * x[k_id]).quantize(Decimal('1.000000')),
+            axis=1)
 
     del df['date0']
     del df['date1']
