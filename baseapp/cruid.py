@@ -3,7 +3,8 @@ import pandas as pd
 from .models import Project, ProjectInvestmentCost, Scenario, \
     InvestmentTypeValue, ScenarioData, ScenarioInvestmentData, \
     DisasterImpact, LevelDisasterImpact, ClimateImpactsTypeValue, \
-    ChangeClimateCondition, ChangeDisasterImpact, SensitivityAnalysis
+    ChangeClimateCondition, ChangeDisasterImpact, SensitivityAnalysis, \
+    ProjectsDisasterImpact
 
 
 def get_project(name: str):
@@ -22,7 +23,7 @@ def get_project_investment_cost(name, project_object):
         _data.save()
     return _data
 
-    
+
 def get_climate_type_values(name, section):
     _data = ClimateImpactsTypeValue.objects.filter(
         name=name, section=section).first()
@@ -87,6 +88,8 @@ def to_database(project_data):
 
     change_disaster_impact_to_database(
         project_data['data_change_disaster_impact'], project_object)
+
+    climat_parameters_to_database(project_data, project_object)
 
     sensitivity_analysis_to_database(project_data['sensitivity_analysis'],
                                      project_object)
@@ -157,16 +160,24 @@ def scenario_from_database(scenario_object, project_object):
     return df.T
 
 
-def climat_parameters_to_database(project_data):
-
+def climat_parameters_to_database(project_data, project_object):
     for x in project_data['disaster_impacts']:
-        get_disaster_impact(x)
+        disaster_impact = get_disaster_impact(x)
+        _data = ProjectsDisasterImpact(disaster_impact=disaster_impact,
+                                       project=project_object)
+        _data.save()
 
     for x in project_data['level_disaster_impacts']:
         get_level_disaster_impact(x)
 
     for x in project_data['climate_impacts_type_value']:
         get_climate_type_values(x['name'], x['section'])
+
+
+def disaster_impacts_from_database(project_id):
+    list_di = ProjectsDisasterImpact.objects.filter(
+        project_id=project_id).order_by('id')
+    return [x.disaster_impact.name for x in list_di]
 
 
 def climate_conditions_to_database(data_climate_condition, project_object):
@@ -201,7 +212,6 @@ def climate_conditions_to_database(data_climate_condition, project_object):
 
 
 def climate_conditions_from_database(project_object, with_project):
-
     cost_data = ProjectInvestmentCost.objects.filter(
         project_id=project_object.id).order_by('id')
     unit_data = ClimateImpactsTypeValue.objects.filter(
@@ -259,6 +269,7 @@ def change_disaster_impact_to_database(data_change_disaster_impact,
                 type_value, 'disaster')
             type_value_data = type_value_dict[type_value]
 
+        value = x.get('value', 0)
         rec = ChangeDisasterImpact(
             project=project_object,
             type_value=type_value_data,
@@ -266,9 +277,36 @@ def change_disaster_impact_to_database(data_change_disaster_impact,
             level_disaster_impact=level_disaster_impact_data,
             impact=x.get('impact', False),
             year=x.get('year', 0),
-            return_period=x.get('return_period', 0),
-            value=x.get('value', 0))
+            value=0 if value is None else value)
         rec.save()
+
+
+def change_disaster_impact_from_database(project_object, disaster_impact):
+    level_data = LevelDisasterImpact.objects.all().order_by('id')
+    unit_data = ClimateImpactsTypeValue.objects.filter(
+        section='disaster').order_by('id')
+    df_dict = {}
+    num = 0
+    for level in level_data:
+        for unit in unit_data:
+            for impact in [False, True]:
+                data = ChangeDisasterImpact.objects.filter(
+                    project_id=project_object.id,
+                    disaster_impact__name=disaster_impact,
+                    level_disaster_impact=level,
+                    impact=impact,
+                    type_value=unit).order_by('year')
+                if data:
+                    line_dict = {'level': level.name,
+                                 'type_value': unit.name,
+                                 'impact': impact}
+                    for data_line in data:
+                        line_dict[data_line.year] = data_line.value
+                    df_dict[num] = line_dict
+                    num += 1
+
+    df = pd.DataFrame(df_dict)
+    return df.T
 
 
 def sensitivity_analysis_to_database(_data, project_object):
@@ -282,17 +320,24 @@ def sensitivity_analysis_to_database(_data, project_object):
         rec.save()
 
 
-def sensitivity_analysis_from_database(project_object, section):
-
-    _data = list(SensitivityAnalysis.objects.filter(
-        project_id=project_object.id, section=section).order_by('id'))
-
+def sensitivity_analysis_from_database(project_object, section, disaster=None):
     unit_data = list(ClimateImpactsTypeValue.objects.filter(
         section=section).order_by('id'))
-
     data_dict = {}
-    if section == 'climate_conditions':
-        for i in range(4):
+    if section == 'disaster':
+        _data = list(SensitivityAnalysis.objects.filter(
+            project_id=project_object.id, section=section,
+            disaster_impact_name=disaster).order_by('id'))
+        for sa in _data:
+            if sa.name.strip() == 'Future change in extreme event frequency (0 - 100%)':
+                data_dict['year'] = sa.value
+            else:
+                data_dict['value'] = sa.value
+    else:
+        _data = list(SensitivityAnalysis.objects.filter(
+            project_id=project_object.id, section=section).order_by('id'))
+
+        for i in range(len(_data)):
             data_dict[unit_data[i].name] = _data[i].value
 
     return data_dict

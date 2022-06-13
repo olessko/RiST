@@ -4,10 +4,6 @@
     <p></p>
     <div class="row justify-content-md-center">
         <ul class="nav gap-2">
-            {#        <li class="nav-item">#}
-            {#            <a class="btn-dark btn-primary btn-sm" href="new_project/" role="button">new#}
-            {#                project</a>#}
-            {#        </li>#}
             <button type="button" class="btn-dark btn-primary btn-sm"
                     data-bs-toggle="modal"
                     data-bs-target="#NewProjectModal">
@@ -24,8 +20,6 @@
                 <th scope="col"></th>
                 <th scope="col"></th>
                 <th scope="col"></th>
-                <th scope="col"></th>
-                <th scope="col"></th>
             </tr>
             </thead>
             <tbody>
@@ -35,24 +29,10 @@
                     <td>{{ item.name }}</td>
                     <td>
                         <a class="btn btn-secondary btn-sm-dark"
-                           href="optimistic_scenario/{{ item.id }}/"
-                           role="button">optimistic_scenario</a>
+                           href="project_view/{{ item.id }}/"
+                           role="button">View</a>
                     </td>
-                    <td>
-                        <a class="btn btn-secondary btn-sm-dark"
-                           href="pesimistic_scenario/{{ item.id }}/"
-                           role="button">pesimistic_scenario</a>
-                    </td>
-                    <td>
-                        <a class="btn btn-secondary btn-sm-dark"
-                           href="climate_conditions_with_project/{{ item.id }}/"
-                           role="button">conditions (with project)</a>
-                    </td>
-                    <td>
-                        <a class="btn btn-secondary btn-sm-dark"
-                           href="climate_conditions_without_project/{{ item.id }}/"
-                           role="button">conditions (without project)</a>
-                    </td>
+
                     <td>
                         <a class="btn btn-secondary btn-sm-dark"
                            href="calculations1/{{ item.id }}/"
@@ -60,7 +40,13 @@
                     </td>
                     <td>
                         <a class="btn btn-secondary btn-sm-dark"
-                           href="delete_project/{{ item.id }}/"
+                           href="calculations2/{{ item.id }}/"
+                           role="button">Calculations II</a>
+                    </td>
+
+                    <td>
+                        <a class="btn btn-secondary btn-sm-dark"
+                           href="project_delete/{{ item.id }}/"
                            role="button">Delete</a>
                     </td>
                 </tr>

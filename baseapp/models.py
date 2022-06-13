@@ -60,6 +60,12 @@ class DisasterImpact(models.Model):
     name = models.CharField('name', blank=True, max_length=50)
 
 
+class ProjectsDisasterImpact(models.Model):
+    disaster_impact = models.ForeignKey('DisasterImpact',
+                                        on_delete=models.CASCADE)
+    project = models.ForeignKey('Project', on_delete=models.CASCADE)
+
+
 class LevelDisasterImpact(models.Model):
     name = models.CharField('name', blank=True, max_length=50)
 
@@ -92,7 +98,6 @@ class ChangeDisasterImpact(models.Model):
                                               on_delete=models.CASCADE)
     impact = models.BooleanField(default=False)
     year = models.IntegerField('year', blank=True, default=0)
-    return_period = models.IntegerField('return_period', blank=True, default=0)
     value = models.DecimalField('value', max_digits=7, decimal_places=2,
                                 blank=True, default=0)
 

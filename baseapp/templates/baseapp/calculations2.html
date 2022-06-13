@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <p></p>
+    <h2>SIMULATION - change in disaster impacts</h2>
+
+    {% for disaster_impact_name, c2_1_html, c2_2_html in context_data %}
+        <p></p>
+        <h2> {{ disaster_impact_name }} </h2>
+        <p></p>
+        {{ c2_1_html|safe }}
+        <p></p>
+        {{ c2_2_html|safe }}
+    {% endfor %}
+
+{% endblock %}

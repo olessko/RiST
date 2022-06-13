@@ -114,8 +114,6 @@ def read_climat_parameters(project_data, wb):
     project_data['level_disaster_impacts'] = level_disaster_impacts
     project_data['climate_impacts_type_value'] = climate_impacts_type_value
 
-    climat_parameters_to_database(project_data)
-
 
 def read_change_climate_condition(project_data, wb):
 
@@ -189,14 +187,15 @@ def read_change_disaster_impact(project_data, wb):
         row = start_row + i * step_row + 3
         level = str(sheet.cell(row, start_col).value).strip()
         return_period = int(sheet.cell(row+1, start_col+2).value)
-        level_template.append((level, return_period, i * step_row + 5))
+        level_template.append((level, return_period, i * step_row + 4))
 
     impact_template = [(0, False), (1, True), ]
 
     list_change_disaster_impact = []
     for disaster_impact, disaster_row in disaster_template:
         for level, return_period, level_row in level_template:
-            for i in range(4):
+
+            for i in range(5):
                 row = disaster_row + level_row + i
                 type_value = sheet.cell(row, start_col).value
 
@@ -211,7 +210,6 @@ def read_change_disaster_impact(project_data, wb):
                              'type_value': type_value,
                              'impact': impact,
                              'year': year,
-                             'return_period': return_period,
                              'value': value})
 
     project_data['data_change_disaster_impact'] = list_change_disaster_impact

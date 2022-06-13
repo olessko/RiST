@@ -8,5 +8,12 @@
         </table>
         <input type="submit" value="Save">
     </form>
+    <p></p>
+    {{ table_scenario|safe }}
+    <p></p>
+    {{ table_climate_conditions|safe }}
+    <p></p>
+    {{ table_disaster_impacts|safe }}
+
 
 {% endblock %}

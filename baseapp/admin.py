@@ -80,7 +80,7 @@ admin.site.register(ChangeClimateCondition, ChangeClimateConditionAdmin)
 
 class ChangeDisasterImpactAdmin(admin.ModelAdmin):
     list_display = ('type_value', 'disaster_impact', 'level_disaster_impact',
-                    'impact', 'year', 'return_period', 'id')
+                    'impact', 'year', 'id')
 
 
 admin.site.register(ChangeDisasterImpact, ChangeDisasterImpactAdmin)
