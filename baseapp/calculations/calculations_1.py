@@ -94,5 +94,6 @@ def calculation2(project_object, disaster_impact):
     del df['date0']
     del df['date1']
     del df['date2']
+    df.sort_index(inplace=True)
 
     return df_c1, df
