@@ -62,7 +62,7 @@ def calculation2(project_object, disaster_impact):
             axis=1)
     df = df_value.append(df_date)
     del df['impact']
-    df_c1 = df.groupby(by=['level', 'type_value'], as_index=False).sum()
+    df_c1 = df.groupby(by=['level_id', 'level', 'type_value'], as_index=False).sum()
 
     df = df_c1.copy()
     for count, _date in enumerate(date_index):
@@ -90,10 +90,38 @@ def calculation2(project_object, disaster_impact):
             lambda x: (Decimal(k) * (x[k_id1] - x[k_id0]) + x[k_id0]).quantize(Decimal('1.0000')),
             axis=1)
 
-    df = df_value.append(df_date)
-    del df['date0']
-    del df['date1']
-    del df['date2']
-    df.sort_index(inplace=True)
+    df_c2 = df_value.append(df_date)
+    del df_c2['date0']
+    del df_c2['date1']
+    del df_c2['date2']
+    df_c2.sort_index(inplace=True)
 
-    return df_c1, df
+    df = df_c2.copy()
+    df_date = df[df.type_value == return_period_name]
+    df_value = df[df.type_value != return_period_name]
+    v_type_value = df_value['type_value'].unique()
+    list_df = []
+    for x in v_type_value:
+        list_df.append(df_value[df_value.type_value == x])
+
+    for year in range(start_year, start_year + project_object.lifetime):
+        v_date = df_date[year].values
+        for i in range(3):
+            v_date[i] = v_date[i] - v_date[i+1]
+
+        for v_df in list_df:
+            v_df[year] = v_df[year].mul(v_date)
+            v_df[year] = v_df[year].apply(
+                lambda x: x.quantize(Decimal('1.0000')))
+
+    for num, v_df in enumerate(list_df):
+        temp = list_df[num]
+        del temp['level_id']
+        del temp['level']
+        list_df[num] = temp.groupby(by=['type_value'], as_index=True).sum()
+
+    df_c3 = list_df[0]
+    for i in range(1, len(list_df)):
+        df_c3 = df_c3.append(list_df[i])
+
+    return df_c1, df_c2, df_c3

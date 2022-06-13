@@ -298,6 +298,7 @@ def change_disaster_impact_from_database(project_object, disaster_impact):
                     type_value=unit).order_by('year')
                 if data:
                     line_dict = {'level': level.name,
+                                 'level_id': level.id,
                                  'type_value': unit.name,
                                  'impact': impact}
                     for data_line in data:

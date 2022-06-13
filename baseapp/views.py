@@ -126,10 +126,11 @@ def calculations2_view(request, project_id):
     context_data = []
     if _record:
         for disaster_impact_name in disaster_impacts_from_database(project_id):
-            c2_1, c2_2 = calculation2(_record, disaster_impact_name)
+            c2_1, c2_2, c2_3 = calculation2(_record, disaster_impact_name)
             context_data.append((disaster_impact_name,
                                  c2_1.to_html(classes='table table-stripped'),
-                                 c2_2.to_html(classes='table table-stripped'))
+                                 c2_2.to_html(classes='table table-stripped'),
+                                 c2_3.to_html(classes='table table-stripped'))
                                 )
         context = {'context_data': context_data}
         return render(request, 'baseapp/calculations2.html', context)

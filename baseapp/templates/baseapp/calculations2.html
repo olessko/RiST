@@ -4,13 +4,18 @@
     <p></p>
     <h2>SIMULATION - change in disaster impacts</h2>
 
-    {% for disaster_impact_name, c2_1_html, c2_2_html in context_data %}
+    {% for disaster_impact_name, c2_1_html, c2_2_html, c2_3_html in context_data %}
         <p></p>
         <h2> {{ disaster_impact_name }} </h2>
         <p></p>
+        <h5>Table 1</h5>
         {{ c2_1_html|safe }}
         <p></p>
+        <h5>Table 2</h5>
         {{ c2_2_html|safe }}
+        <p></p>
+        <h5>Table 3</h5>
+        {{ c2_3_html|safe }}
     {% endfor %}
 
 {% endblock %}
