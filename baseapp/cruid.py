@@ -149,15 +149,23 @@ def scenario_from_database(scenario_object, project_object):
                     type_value=unit).order_by('year')
                 if data:
                     line_dict = {'cost': cost.name,
-                                 'with project': with_project,
-                                 'unit': unit.name}
+                                 'with_project': with_project,
+                                 'type_value': unit.name}
                     for data_line in data:
                         line_dict[data_line.year] = data_line.value
                     df_dict[num] = line_dict
                     num += 1
 
     df = pd.DataFrame(df_dict)
-    return df.T
+
+    line_dict = {}
+    data = ScenarioInvestmentData.objects.filter(
+        scenario_id=scenario_object.id).order_by('year')
+    if data:
+        for data_line in data:
+            line_dict[data_line.year] = data_line.value
+
+    return df.T, line_dict
 
 
 def climat_parameters_to_database(project_data, project_object):

@@ -1,4 +1,5 @@
 from decimal import Decimal
+import numpy as np
 
 from ..cruid import climate_conditions_from_database, \
     sensitivity_analysis_from_database, change_disaster_impact_from_database
@@ -125,3 +126,44 @@ def calculation2(project_object, disaster_impact):
         df_c3 = df_c3.append(list_df[i])
 
     return df_c1, df_c2, df_c3
+
+
+def calculation_npv(project_object, df, invesment_dict):
+    del df['cost']
+    df = df.groupby(by=['type_value', 'with_project'], as_index=False).sum()
+
+    start_year = project_object.start_year
+    for year in range(start_year, start_year + project_object.lifetime):
+        df[year] = df.apply(
+            lambda x: x[year] if x['with_project'] else -x[year],
+            axis=1)
+
+    v_time_saving = 'Time Savings (USD)'
+    df_base = df[df.type_value != v_time_saving]
+    del df_base['type_value']
+    del df_base['with_project']
+    df_base['discounted'] = 'costs'
+
+    df_base = df_base.groupby(by=['discounted'], as_index=False).sum()
+    for year in range(start_year, start_year + project_object.lifetime):
+        df_base[year] = df_base.apply(
+            lambda x: x[year] + invesment_dict[year],
+            axis=1)
+
+    df_time = df[df.type_value == v_time_saving]
+    del df_time['type_value']
+    del df_time['with_project']
+    df_time['discounted'] = 'benefits'
+    df_time = df_time.groupby(by=['discounted'], as_index=False).sum()
+
+    df = df_base.append(df_time)
+    for year in range(start_year, start_year + project_object.lifetime):
+        k = pow(Decimal(1 + project_object.discount_rate),
+                Decimal(year + 1 - start_year))
+        df[year] = df.apply(lambda x: (x[year] / k).quantize(Decimal('1.00')),
+                            axis=1)
+    dfs = df.copy()
+    del dfs['discounted']
+    total_sum = np.sum(dfs.values, axis=1)
+    npv = total_sum[1] - total_sum[0]
+    return df, npv

@@ -5,7 +5,8 @@ from django.urls import reverse
 from django.views.generic import ListView
 from django.views.generic.edit import FormView, UpdateView
 
-from .calculations.calculations_1 import calculations_1_1, calculation2
+from .calculations.calculations_1 import calculations_1_1, calculation2, \
+    calculation_npv
 from .forms import ProjectForm
 from .models import Project
 from .cruid import get_project_object, scenario_from_database, \
@@ -47,9 +48,15 @@ def delete_project_view(request, project_id):
 def optimistic_scenario_view(request, project_id):
     _record = get_project_object(project_id)
     if _record:
-        df = scenario_from_database(_record.optimistic_scenario, _record)
+        df, dfi = scenario_from_database(_record.optimistic_scenario, _record)
+        df_discounted, nvp = calculation_npv(_record, df, dfi)
 
-        context = {'df_html': df.to_html(classes='table table-stripped')}
+        context = {'df_html': df.to_html(classes='table table-stripped'),
+                   # 'dfi_html': dfi.to_html(classes='table table-stripped'),
+                   'df_discounted_html': df_discounted.to_html(
+                       classes='table table-stripped'),
+                   'nvp': nvp
+                   }
         return render(request, 'baseapp/scenario.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))
 
@@ -58,9 +65,13 @@ def optimistic_scenario_view(request, project_id):
 def pesimistic_scenario_view(request, project_id):
     _record = get_project_object(project_id)
     if _record:
-        df = scenario_from_database(_record.pesimistic_scenario, _record)
+        df, dfi = scenario_from_database(_record.pesimistic_scenario, _record)
+        df_discounted, nvp = calculation_npv(_record, df, dfi)
 
-        context = {'df_html': df.to_html(classes='table table-stripped')}
+        context = {'df_html': df.to_html(classes='table table-stripped'),
+                   'df_discounted_html': df_discounted.to_html(
+                       classes='table table-stripped'),
+                   'nvp': nvp}
         return render(request, 'baseapp/scenario.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))
 
@@ -122,6 +133,23 @@ def calculations1_view(request, project_id):
 
 @login_required
 def calculations2_view(request, project_id):
+    _record = get_project_object(project_id)
+    context_data = []
+    if _record:
+        for disaster_impact_name in disaster_impacts_from_database(project_id):
+            c2_1, c2_2, c2_3 = calculation2(_record, disaster_impact_name)
+            context_data.append((disaster_impact_name,
+                                 c2_1.to_html(classes='table table-stripped'),
+                                 c2_2.to_html(classes='table table-stripped'),
+                                 c2_3.to_html(classes='table table-stripped'))
+                                )
+        context = {'context_data': context_data}
+        return render(request, 'baseapp/calculations2.html', context)
+    return HttpResponseRedirect(reverse('baseapp:home'))
+
+
+@login_required
+def calculations3_view(request, project_id):
     _record = get_project_object(project_id)
     context_data = []
     if _record:
