@@ -2,7 +2,8 @@ from decimal import Decimal
 import numpy as np
 
 from ..cruid import climate_conditions_from_database, \
-    sensitivity_analysis_from_database, change_disaster_impact_from_database
+    sensitivity_analysis_from_database, change_disaster_impact_from_database, \
+    scenario_from_database
 
 
 def calculations_1_1(project_object, with_project):
@@ -63,7 +64,8 @@ def calculation2(project_object, disaster_impact):
             axis=1)
     df = df_value.append(df_date)
     del df['impact']
-    df_c1 = df.groupby(by=['level_id', 'level', 'type_value'], as_index=False).sum()
+    df_c1 = df.groupby(by=['level_id', 'level', 'type_value'],
+                       as_index=False).sum()
 
     df = df_c1.copy()
     for count, _date in enumerate(date_index):
@@ -79,16 +81,18 @@ def calculation2(project_object, disaster_impact):
             k_id0 = 'date0'
         else:
             k = (year - date_index[1][0]) / (
-                        date_index[2][0] - date_index[1][0])
+                    date_index[2][0] - date_index[1][0])
             k_id1 = 'date2'
             k_id0 = 'date1'
 
         df_date[year] = df_date.apply(
-            lambda x: (Decimal(k) * (1 / x[k_id1] - 1 / x[k_id0]) + 1 / x[k_id0]).quantize(Decimal('1.0000')),
+            lambda x: (Decimal(k) * (1 / x[k_id1] - 1 / x[k_id0]) + 1 / x[
+                k_id0]).quantize(Decimal('1.0000')),
             axis=1)
 
         df_value[year] = df_value.apply(
-            lambda x: (Decimal(k) * (x[k_id1] - x[k_id0]) + x[k_id0]).quantize(Decimal('1.0000')),
+            lambda x: (Decimal(k) * (x[k_id1] - x[k_id0]) + x[k_id0]).quantize(
+                Decimal('1.0000')),
             axis=1)
 
     df_c2 = df_value.append(df_date)
@@ -108,7 +112,7 @@ def calculation2(project_object, disaster_impact):
     for year in range(start_year, start_year + project_object.lifetime):
         v_date = df_date[year].values
         for i in range(3):
-            v_date[i] = v_date[i] - v_date[i+1]
+            v_date[i] = v_date[i] - v_date[i + 1]
 
         for v_df in list_df:
             v_df[year] = v_df[year].mul(v_date)
@@ -167,3 +171,43 @@ def calculation_npv(project_object, df, invesment_dict):
     total_sum = np.sum(dfs.values, axis=1)
     npv = total_sum[1] - total_sum[0]
     return df, npv
+
+
+def calculation_expected_flows(project_object):
+    list_nvp = []
+    discount_rate = Decimal(project_object.discount_rate)
+
+    df_optimistic_scenario, dfi_optimistic_scenario = scenario_from_database(
+        project_object.optimistic_scenario, project_object)
+
+    df_pesimistic_scenario, dfi_pesimistic_scenario = scenario_from_database(
+        project_object.pesimistic_scenario, project_object)
+
+    # df_optimistic_scenario.set_index(['cost', 'with_project', 'type_value'])
+    # df_pesimistic_scenario.set_index(['cost', 'with_project', 'type_value'])
+    #
+    # df = df_pesimistic_scenario * discount_rate + df_optimistic_scenario * (
+    #         Decimal(1) - discount_rate)
+
+    dfi = {}
+    start_year = project_object.start_year
+    for year in range(start_year, start_year + project_object.lifetime):
+        dfi[year] = dfi_pesimistic_scenario[year] * discount_rate + \
+                    dfi_optimistic_scenario[year] * (1 - discount_rate)
+        df_optimistic_scenario[year] = df_optimistic_scenario.apply(
+            lambda x: (x[year] * (1 - discount_rate)).quantize(Decimal('1.00')),
+            axis=1)
+        df_pesimistic_scenario[year] = df_pesimistic_scenario.apply(
+            lambda x: (x[year] * discount_rate).quantize(Decimal('1.00')),
+            axis=1)
+
+    df = df_optimistic_scenario.append(df_pesimistic_scenario)
+    df = df.groupby(by=['cost', 'with_project', 'type_value'],
+                    as_index=False).sum()
+
+    df_discounted, nvp = calculation_npv(project_object, df.copy(), dfi)
+
+    list_nvp.append(('Baseline (including project pessimism but without climate impacts)',
+                     df, df_discounted, nvp))
+
+    return list_nvp

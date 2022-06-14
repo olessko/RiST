@@ -6,7 +6,7 @@ from django.views.generic import ListView
 from django.views.generic.edit import FormView, UpdateView
 
 from .calculations.calculations_1 import calculations_1_1, calculation2, \
-    calculation_npv
+    calculation_npv, calculation_expected_flows
 from .forms import ProjectForm
 from .models import Project
 from .cruid import get_project_object, scenario_from_database, \
@@ -151,17 +151,17 @@ def calculations2_view(request, project_id):
 @login_required
 def calculations3_view(request, project_id):
     _record = get_project_object(project_id)
-    context_data = []
     if _record:
-        for disaster_impact_name in disaster_impacts_from_database(project_id):
-            c2_1, c2_2, c2_3 = calculation2(_record, disaster_impact_name)
-            context_data.append((disaster_impact_name,
-                                 c2_1.to_html(classes='table table-stripped'),
-                                 c2_2.to_html(classes='table table-stripped'),
-                                 c2_3.to_html(classes='table table-stripped'))
-                                )
+        context_data = []
+        for name, df, df_discounted, nvp in calculation_expected_flows(_record):
+            context_data.append((name,
+                                 df.to_html(classes='table table-stripped'),
+                                 df_discounted.to_html(
+                                     classes='table table-stripped'),
+                                 nvp
+                                ))
         context = {'context_data': context_data}
-        return render(request, 'baseapp/calculations2.html', context)
+        return render(request, 'baseapp/expected_folows.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))
 
 

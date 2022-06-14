@@ -4,18 +4,18 @@
     <p></p>
     <h2>Expected flows</h2>
 
-    {% for name, c1_html, c2_html, npv in context_data %}
+    {% for name, c1_html, c2_html, nvp in context_data %}
         <p></p>
-        <h2> {{ name }} </h2>
+        <h2> CALCULATION: {{ name }} </h2>
         <p></p>
-        <h5>Table 1</h5>
         {{ c1_html|safe }}
         <p></p>
-        <h5>Table 2</h5>
+        <h2>discounted</h2>
         {{ c2_html|safe }}
-{#        <p></p>#}
-{#        <h5>Table 3</h5>#}
-{#        {{ c3_html|safe }}#}
+
+        <p></p>
+        <h2>NVP: {{ nvp }}</h2>
+
     {% endfor %}
 
 {% endblock %}
