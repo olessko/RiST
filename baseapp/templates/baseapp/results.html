@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <p></p>
+    <h2>Results</h2>
+
+    {% for name, nvp in context_data %}
+        <p></p>
+        <p> CALCULATION: {{ name }} </p>
+        <p></p>
+        <p>NVP: {{ nvp }}</p>
+
+    {% endfor %}
+
+{% endblock %}

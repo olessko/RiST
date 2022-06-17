@@ -105,7 +105,8 @@ class ChangeDisasterImpact(models.Model):
 class SensitivityAnalysis(models.Model):
     project = models.ForeignKey('Project', on_delete=models.CASCADE)
     name = models.CharField('name', blank=True, max_length=100)
-    disaster_impact_name = models.CharField('name', blank=True, max_length=50)
+    disaster_impact_name = models.CharField('disaster impact', blank=True,
+                                            max_length=50)
     section = models.CharField('section', blank=True, max_length=20)
     value = models.DecimalField('value', max_digits=7, decimal_places=2,
                                 blank=True, default=0)

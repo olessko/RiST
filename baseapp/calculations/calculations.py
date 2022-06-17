@@ -2,15 +2,14 @@ from decimal import Decimal
 import numpy as np
 
 from ..cruid import climate_conditions_from_database, \
-    sensitivity_analysis_from_database, change_disaster_impact_from_database, \
-    scenario_from_database
+    sensitivity_analysis_from_database, change_disaster_impact_from_database
 
 
-def calculations_1_1(project_object, with_project):
+def calculations_1_1(project_object, with_project, test_mode=True):
     sa = sensitivity_analysis_from_database(project_object,
                                             'climate_conditions')
     df = climate_conditions_from_database(project_object, with_project)
-    df['sa'] = df["type value"].map(sa)
+    df['sa'] = df["type_value"].map(sa)
 
     date_index = [2030, 2050]
     for _date in date_index:
@@ -19,7 +18,7 @@ def calculations_1_1(project_object, with_project):
             axis=1)
     del df['impact']
     del df['sa']
-    df_cc = df.groupby(by=['type value', 'cost']).sum()
+    df_cc = df.groupby(by=['type_value', 'cost'], as_index=False).sum()
 
     df = df_cc.copy()
     for count, _date in enumerate(date_index):
@@ -40,10 +39,13 @@ def calculations_1_1(project_object, with_project):
     del df['date0']
     del df['date1']
 
-    return df_cc, df
+    if test_mode:
+        return df_cc, df
+    else:
+        return df
 
 
-def calculation2(project_object, disaster_impact):
+def calculation2(project_object, disaster_impact, test_mode=True):
     sa = sensitivity_analysis_from_database(project_object, 'disaster',
                                             disaster=disaster_impact)
     sa_year = sa.get('year', None)
@@ -128,11 +130,15 @@ def calculation2(project_object, disaster_impact):
     df_c3 = list_df[0]
     for i in range(1, len(list_df)):
         df_c3 = df_c3.append(list_df[i])
+    df_c3 = df_c3.reset_index()
 
-    return df_c1, df_c2, df_c3
+    if test_mode:
+        return df_c1, df_c2, df_c3
+    else:
+        return df_c3
 
 
-def calculation_npv(project_object, df, invesment_dict):
+def calculation_npv(project_object, df, invesment_dict, test_mode=True):
     del df['cost']
     df = df.groupby(by=['type_value', 'with_project'], as_index=False).sum()
 
@@ -170,44 +176,9 @@ def calculation_npv(project_object, df, invesment_dict):
     del dfs['discounted']
     total_sum = np.sum(dfs.values, axis=1)
     npv = total_sum[1] - total_sum[0]
-    return df, npv
 
+    if test_mode:
+        return df, npv
+    else:
+        return npv
 
-def calculation_expected_flows(project_object):
-    list_nvp = []
-    discount_rate = Decimal(project_object.discount_rate)
-
-    df_optimistic_scenario, dfi_optimistic_scenario = scenario_from_database(
-        project_object.optimistic_scenario, project_object)
-
-    df_pesimistic_scenario, dfi_pesimistic_scenario = scenario_from_database(
-        project_object.pesimistic_scenario, project_object)
-
-    # df_optimistic_scenario.set_index(['cost', 'with_project', 'type_value'])
-    # df_pesimistic_scenario.set_index(['cost', 'with_project', 'type_value'])
-    #
-    # df = df_pesimistic_scenario * discount_rate + df_optimistic_scenario * (
-    #         Decimal(1) - discount_rate)
-
-    dfi = {}
-    start_year = project_object.start_year
-    for year in range(start_year, start_year + project_object.lifetime):
-        dfi[year] = dfi_pesimistic_scenario[year] * discount_rate + \
-                    dfi_optimistic_scenario[year] * (1 - discount_rate)
-        df_optimistic_scenario[year] = df_optimistic_scenario.apply(
-            lambda x: (x[year] * (1 - discount_rate)).quantize(Decimal('1.00')),
-            axis=1)
-        df_pesimistic_scenario[year] = df_pesimistic_scenario.apply(
-            lambda x: (x[year] * discount_rate).quantize(Decimal('1.00')),
-            axis=1)
-
-    df = df_optimistic_scenario.append(df_pesimistic_scenario)
-    df = df.groupby(by=['cost', 'with_project', 'type_value'],
-                    as_index=False).sum()
-
-    df_discounted, nvp = calculation_npv(project_object, df.copy(), dfi)
-
-    list_nvp.append(('Baseline (including project pessimism but without climate impacts)',
-                     df, df_discounted, nvp))
-
-    return list_nvp

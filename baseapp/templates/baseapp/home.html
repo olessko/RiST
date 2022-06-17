@@ -21,6 +21,7 @@
                 <th scope="col"></th>
                 <th scope="col"></th>
                 <th scope="col"></th>
+                <th scope="col"></th>
             </tr>
             </thead>
             <tbody>
@@ -29,25 +30,30 @@
                     <th scope="row">{{ item.id }} </th>
                     <td>{{ item.name }}</td>
                     <td>
-                        <a class="btn btn-secondary btn-sm-dark"
+                        <a class="btn btn-outline-secondary btn-sm-dark"
                            href="project_view/{{ item.id }}/"
-                           role="button">View</a>
+                           role="button">Inputs</a>
                     </td>
 
                     <td>
-                        <a class="btn btn-secondary btn-sm-dark"
+                        <a class="btn btn-outline-secondary btn-sm-dark"
                            href="calculations1/{{ item.id }}/"
                            role="button">Calculations I</a>
                     </td>
                     <td>
-                        <a class="btn btn-secondary btn-sm-dark"
+                        <a class="btn btn-outline-secondary btn-sm-dark"
                            href="calculations2/{{ item.id }}/"
                            role="button">Calculations II</a>
                     </td>
                     <td>
-                        <a class="btn btn-secondary btn-sm-dark"
+                        <a class="btn btn-outline-secondary btn-sm-dark"
                            href="calculations3/{{ item.id }}/"
                            role="button">Expected flows</a>
+                    </td>
+                    <td>
+                        <a class="btn btn-outline-secondary btn-sm-dark"
+                           href="results/{{ item.id }}/"
+                           role="button">Results</a>
                     </td>
 
                     <td>

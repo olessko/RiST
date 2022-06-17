@@ -236,7 +236,7 @@ def climate_conditions_from_database(project_object, with_project):
                     with_project=with_project,
                     type_value=unit).order_by('year')
                 if data:
-                    line_dict = {'type value': unit.name,
+                    line_dict = {'type_value': unit.name,
                                  'cost': cost.name,
                                  'impact': impact}
                     for data_line in data:

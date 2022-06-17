@@ -5,7 +5,7 @@ from .views import ProjectView, upload_project, delete_project_view, \
     ProjectFormView, optimistic_scenario_view, \
     pesimistic_scenario_view, climate_conditions_without_project_view, \
     climate_conditions_with_project_view, calculations1_view, ProjectUpdateView, \
-    disaster_impact_view, calculations2_view, calculations3_view
+    disaster_impact_view, calculations2_view, calculations3_view, results_view
 
 app_name = 'baseapp'
 
@@ -46,4 +46,7 @@ urlpatterns = [
 
     path(r'calculations3/<project_id>/', calculations3_view,
          name='calculations3'),
+
+    path(r'results/<project_id>/', results_view,
+         name='results'),
 ]

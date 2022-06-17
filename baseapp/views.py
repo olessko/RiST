@@ -5,8 +5,9 @@ from django.urls import reverse
 from django.views.generic import ListView
 from django.views.generic.edit import FormView, UpdateView
 
-from .calculations.calculations_1 import calculations_1_1, calculation2, \
-    calculation_npv, calculation_expected_flows
+from .calculations.calculations import calculations_1_1, calculation2, \
+    calculation_npv
+from .calculations.expected_flows import calculation_expected_flows
 from .forms import ProjectForm
 from .models import Project
 from .cruid import get_project_object, scenario_from_database, \
@@ -153,15 +154,30 @@ def calculations3_view(request, project_id):
     _record = get_project_object(project_id)
     if _record:
         context_data = []
-        for name, df, df_discounted, nvp in calculation_expected_flows(_record):
-            context_data.append((name,
-                                 df.to_html(classes='table table-stripped'),
-                                 df_discounted.to_html(
+        for rez in calculation_expected_flows(_record):
+            context_data.append((rez['name'],
+                                 rez['df'].to_html(
                                      classes='table table-stripped'),
-                                 nvp
-                                ))
+                                 rez['df_discounted'].to_html(
+                                     classes='table table-stripped'),
+                                 rez['nvp']
+                                 ))
         context = {'context_data': context_data}
         return render(request, 'baseapp/expected_folows.html', context)
+    return HttpResponseRedirect(reverse('baseapp:home'))
+
+
+@login_required
+def results_view(request, project_id):
+    _record = get_project_object(project_id)
+    if _record:
+        context_data = []
+        for rez in calculation_expected_flows(_record, test_mode=False):
+            context_data.append((rez['name'],
+                                 rez['nvp']
+                                 ))
+        context = {'context_data': context_data}
+        return render(request, 'baseapp/results.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))
 
 
@@ -178,17 +194,6 @@ class ProjectUpdateView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['table_scenario'] = self.table_view(
-            'Scenario',
-            [('optimistic_scenario/', 'OPTIMISTIC BASELINE SCENARIO'),
-             ('pesimistic_scenario/', 'PESIMISTIC BASELINE SCENARIO'),
-             ])
-
-        context['table_climate_conditions'] = self.table_view(
-            'Change in average climate conditions',
-            [('climate_conditions_with_project/', 'WITH project'),
-             ('climate_conditions_without_project/', 'WITHOUT project'),
-             ])
 
         project_id = self.kwargs.get('pk', None)
         list_disaster_impacts = []
@@ -196,28 +201,53 @@ class ProjectUpdateView(UpdateView):
             for x in disaster_impacts_from_database(project_id):
                 list_disaster_impacts.append(
                     (f'disaster_impact/{x}/', x))
+        max_col = len(list_disaster_impacts) if len(
+            list_disaster_impacts) > 2 else 2
 
-        context['table_disaster_impacts'] = self.table_view(
-            'Disaster impacts',
-            list_disaster_impacts)
+        table_rows = [
+            {
+                'name': 'Scenario',
+                'data_row': [
+                    ('optimistic_scenario/', 'OPTIMISTIC BASELINE SCENARIO'),
+                    ('pesimistic_scenario/', 'PESIMISTIC BASELINE SCENARIO'),
+                    ]
+            },
+            {
+                'name': 'Climate  impact',
+                'data_row': [
+                    ('climate_conditions_with_project/', 'WITH project'),
+                    ('climate_conditions_without_project/', 'WITHOUT project'),
+                    ]
+            },
+            {
+                'name': 'Disaster impacts',
+                'data_row': list_disaster_impacts
+            }
+        ]
 
+        context['table_input_data'] = self.table_view(table_rows, max_col)
         return context
 
-    def table_view(self, name, data_list):
+    def table_view(self, table_rows, max_col):
         tablebody_list = []
-        for url, url_name in data_list:
-            tablebody_list.append('''<tr>
-                    <td>
-                        <a class="btn btn-link"
-                           href="{url}">{url_name}</a>
-                    </td>
-                    </tr>'''.format(url=url, url_name=url_name))
+        for x in table_rows:
+            tablebody_row = ['<td><h4>{name}</h4></td>'.format(name=x['name'], ),]
+            for url, url_name in x['data_row']:
+                tablebody_row.append('''
+                        <td>
+                            <a class="btn btn-link"
+                               href="{url}">{url_name}</a>
+                        </td>'''.format(url=url, url_name=url_name))
+            for i in range(2, max_col):
+                tablebody_row.append('<td></td>')
+            tablebody_list.append("<tr> {data_line}</tr>".format(
+                data_line="\n".join(tablebody_row)))
+        tablebody = "\n".join(tablebody_list)
 
         return """<p></p>
-           <h3>{name}</h3>
-           <p></p>
+            <p></p>
             <table class ="table table-borderless" >
                <tbody> <tr>
                {tablebody}
                </tr> </tbody>
-            </table>""".format(name=name, tablebody="\n".join(tablebody_list))
+            </table>""".format(tablebody=tablebody)
