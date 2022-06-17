@@ -2,16 +2,11 @@
 
 {% block content %}
     <p></p>
-{#    <h5>investments</h5>#}
-{#    {{ dfi_html|safe }}#}
+    <h5>{{ name }}</h5>
     <p></p>
-{#    <h2>Table 1</h2>#}
     {{ df_html|safe }}
     <p></p>
-{#    <h5>discounted</h5>#}
     {{ df_discounted_html|safe }}
-
     <p></p>
-    <h2>NVP: {{ nvp }}</h2>
-
+    <h5>NVP: {{ nvp }}</h5>
 {% endblock %}

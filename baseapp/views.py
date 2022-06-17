@@ -41,62 +41,65 @@ def upload_project(request):
 def delete_project_view(request, project_id):
     _record = get_project_object(project_id)
     if _record:
+        _record.optimistic_scenario.delete()
+        _record.pesimistic_scenario.delete()
         _record.delete()
     return HttpResponseRedirect(reverse('baseapp:home'))
 
 
+def scenario_view(scenario_object, project_object):
+    scenario = scenario_from_database(scenario_object, project_object)
+    df_discounted, nvp = calculation_npv(project_object, scenario['df'].copy(),
+                                         scenario['dfi'])
+    return {'name': scenario['name'],
+            'df_html': scenario['df'].to_html(classes='table table-stripped'),
+            'df_discounted_html': df_discounted.to_html(
+                classes='table table-stripped'),
+            'nvp': nvp
+            }
+
+
 @login_required
 def optimistic_scenario_view(request, project_id):
-    _record = get_project_object(project_id)
-    if _record:
-        df, dfi = scenario_from_database(_record.optimistic_scenario, _record)
-        df_discounted, nvp = calculation_npv(_record, df, dfi)
-
-        context = {'df_html': df.to_html(classes='table table-stripped'),
-                   # 'dfi_html': dfi.to_html(classes='table table-stripped'),
-                   'df_discounted_html': df_discounted.to_html(
-                       classes='table table-stripped'),
-                   'nvp': nvp
-                   }
+    project_object = get_project_object(project_id)
+    if project_object:
+        context = scenario_view(project_object.optimistic_scenario,
+                                project_object)
         return render(request, 'baseapp/scenario.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))
 
 
 @login_required
 def pesimistic_scenario_view(request, project_id):
+    project_object = get_project_object(project_id)
+    if project_object:
+        context = scenario_view(project_object.pesimistic_scenario,
+                                project_object)
+        return render(request, 'baseapp/scenario.html', context)
+    return HttpResponseRedirect(reverse('baseapp:home'))
+
+
+def climate_conditions_view(request, project_id, with_project):
     _record = get_project_object(project_id)
     if _record:
-        df, dfi = scenario_from_database(_record.pesimistic_scenario, _record)
-        df_discounted, nvp = calculation_npv(_record, df, dfi)
+        df = climate_conditions_from_database(_record, with_project)
 
-        context = {'df_html': df.to_html(classes='table table-stripped'),
-                   'df_discounted_html': df_discounted.to_html(
-                       classes='table table-stripped'),
-                   'nvp': nvp}
+        context = {
+            'df_html': df.to_html(classes='table table-stripped'),
+            'name': 'Change in average climate conditions {} project'.format(
+                'WITH' if with_project else 'WITHOUT')}
         return render(request, 'baseapp/scenario.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))
 
 
 @login_required
 def climate_conditions_with_project_view(request, project_id):
-    _record = get_project_object(project_id)
-    if _record:
-        df = climate_conditions_from_database(_record, True)
-
-        context = {'df_html': df.to_html(classes='table table-stripped')}
-        return render(request, 'baseapp/scenario.html', context)
-    return HttpResponseRedirect(reverse('baseapp:home'))
+    return climate_conditions_view(request, project_id, True)
 
 
 @login_required
 def climate_conditions_without_project_view(request, project_id):
-    _record = get_project_object(project_id)
-    if _record:
-        df = climate_conditions_from_database(_record, False)
-
-        context = {'df_html': df.to_html(classes='table table-stripped')}
-        return render(request, 'baseapp/scenario.html', context)
-    return HttpResponseRedirect(reverse('baseapp:home'))
+    return climate_conditions_view(request, project_id, False)
 
 
 @login_required
@@ -210,14 +213,14 @@ class ProjectUpdateView(UpdateView):
                 'data_row': [
                     ('optimistic_scenario/', 'OPTIMISTIC BASELINE SCENARIO'),
                     ('pesimistic_scenario/', 'PESIMISTIC BASELINE SCENARIO'),
-                    ]
+                ]
             },
             {
                 'name': 'Climate  impact',
                 'data_row': [
                     ('climate_conditions_with_project/', 'WITH project'),
                     ('climate_conditions_without_project/', 'WITHOUT project'),
-                    ]
+                ]
             },
             {
                 'name': 'Disaster impacts',
@@ -231,7 +234,8 @@ class ProjectUpdateView(UpdateView):
     def table_view(self, table_rows, max_col):
         tablebody_list = []
         for x in table_rows:
-            tablebody_row = ['<td><h4>{name}</h4></td>'.format(name=x['name'], ),]
+            tablebody_row = [
+                '<td><h4>{name}</h4></td>'.format(name=x['name'], ), ]
             for url, url_name in x['data_row']:
                 tablebody_row.append('''
                         <td>

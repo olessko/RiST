@@ -32,11 +32,15 @@ def flows1(project_object, test_mode=True):
 
     discount_rate = Decimal(project_object.discount_rate)
 
-    df_optimistic_scenario, dfi_optimistic_scenario = scenario_from_database(
+    optimistic_scenario = scenario_from_database(
         project_object.optimistic_scenario, project_object)
+    df_optimistic_scenario = optimistic_scenario['df']
+    dfi_optimistic_scenario = optimistic_scenario['dfi']
 
-    df_pesimistic_scenario, dfi_pesimistic_scenario = scenario_from_database(
+    pesimistic_scenario = scenario_from_database(
         project_object.pesimistic_scenario, project_object)
+    df_pesimistic_scenario = pesimistic_scenario['df']
+    dfi_pesimistic_scenario = pesimistic_scenario['dfi']
 
     dfi = {}
     start_year = project_object.start_year
