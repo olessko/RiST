@@ -5,14 +5,15 @@ from django.urls import reverse
 from django.views.generic import ListView
 from django.views.generic.edit import FormView, UpdateView
 
-from .calculations.calculations import calculations_1_1, calculation2, \
-    calculation_npv
-from .calculations.expected_flows import calculation_expected_flows
+from .calculations.calculations import calculations_1_1, calculations_1_2, \
+    calculation_npv, calculation2_1, calculation2_2, calculation2_3
+from .calculations.expected_flows import calculation_expected_flows, \
+    calculations_for_graph
+from .calculations.project_object import ProjectObject
 from .forms import ProjectForm
 from .models import Project
-from .cruid import get_project_object, scenario_from_database, \
-    climate_conditions_from_database, disaster_impacts_from_database, \
-    change_disaster_impact_from_database
+from .cruid import get_project_object, disasters_from_database, \
+    calculations_to_database, calculations_from_database
 from .parsers import read_from_exel
 
 
@@ -47,23 +48,22 @@ def delete_project_view(request, project_id):
     return HttpResponseRedirect(reverse('baseapp:home'))
 
 
-def scenario_view(scenario_object, project_object):
-    scenario = scenario_from_database(scenario_object, project_object)
-    df_discounted, nvp = calculation_npv(project_object, scenario['df'].copy(),
+def scenario_view(scenario, project_object):
+    df_discounted, npv = calculation_npv(project_object, scenario['df'].copy(),
                                          scenario['dfi'])
     return {'name': scenario['name'],
             'df_html': scenario['df'].to_html(classes='table table-stripped'),
             'df_discounted_html': df_discounted.to_html(
                 classes='table table-stripped'),
-            'nvp': nvp
+            'npv': npv
             }
 
 
 @login_required
 def optimistic_scenario_view(request, project_id):
-    project_object = get_project_object(project_id)
+    project_object = ProjectObject(project_id)
     if project_object:
-        context = scenario_view(project_object.optimistic_scenario,
+        context = scenario_view(project_object.get_optimistic_scenario(),
                                 project_object)
         return render(request, 'baseapp/scenario.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))
@@ -71,19 +71,18 @@ def optimistic_scenario_view(request, project_id):
 
 @login_required
 def pesimistic_scenario_view(request, project_id):
-    project_object = get_project_object(project_id)
+    project_object = ProjectObject(project_id)
     if project_object:
-        context = scenario_view(project_object.pesimistic_scenario,
+        context = scenario_view(project_object.get_pesimistic_scenario(),
                                 project_object)
         return render(request, 'baseapp/scenario.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))
 
 
 def climate_conditions_view(request, project_id, with_project):
-    _record = get_project_object(project_id)
-    if _record:
-        df = climate_conditions_from_database(_record, with_project)
-
+    project_object = ProjectObject(project_id)
+    if project_object:
+        df = project_object.get_climate_conditions(with_project=with_project)
         context = {
             'df_html': df.to_html(classes='table table-stripped'),
             'name': 'Change in average climate conditions {} project'.format(
@@ -103,11 +102,10 @@ def climate_conditions_without_project_view(request, project_id):
 
 
 @login_required
-def disaster_impact_view(request, project_id, disaster_impact_name):
-    _record = get_project_object(project_id)
-    if _record:
-        df = change_disaster_impact_from_database(_record, disaster_impact_name)
-
+def disaster_impact_view(request, project_id, disaster_name):
+    project_object = ProjectObject(project_id)
+    if project_object:
+        df = project_object.get_disaster_impacts(disaster_name=disaster_name)
         context = {'df_html': df.to_html(classes='table table-stripped')}
         return render(request, 'baseapp/scenario.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))
@@ -115,34 +113,32 @@ def disaster_impact_view(request, project_id, disaster_impact_name):
 
 @login_required
 def calculations1_view(request, project_id):
-    _record = get_project_object(project_id)
-    if _record:
-        cc_with_project, cc_with_project_table = calculations_1_1(_record, True)
-        cc_without_project, cc_without_project_table = calculations_1_1(_record,
-                                                                        False)
+    project_object = ProjectObject(project_id)
+    context = {}
+    if project_object:
+        for with_project in [True, False]:
+            df = calculations_1_1(project_object, with_project)
+            df_table = calculations_1_2(project_object, df.copy())
+            t1 = 'with' if with_project else 'without'
+            context[f'df_{t1}_project_html'] = df.to_html(
+                classes='table table-stripped')
+            context[f'df_{t1}_project_table_html'] = df_table.to_html(
+                classes='table table-stripped')
 
-        context = {
-            'climate_conditions_with_project_html':
-                cc_with_project.to_html(classes='table table-stripped'),
-            'climate_conditions_without_project_html':
-                cc_without_project.to_html(classes='table table-stripped'),
-            'climate_conditions_with_project_table_html':
-                cc_with_project_table.to_html(classes='table table-stripped'),
-            'climate_conditions_without_project_table_html':
-                cc_without_project_table.to_html(classes='table table-stripped')
-        }
         return render(request, 'baseapp/calculations1.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))
 
 
 @login_required
 def calculations2_view(request, project_id):
-    _record = get_project_object(project_id)
     context_data = []
-    if _record:
-        for disaster_impact_name in disaster_impacts_from_database(project_id):
-            c2_1, c2_2, c2_3 = calculation2(_record, disaster_impact_name)
-            context_data.append((disaster_impact_name,
+    project_object = ProjectObject(project_id)
+    if project_object:
+        for disaster_name in project_object.get_disasters():
+            c2_1 = calculation2_1(project_object, disaster_name)
+            c2_2 = calculation2_2(project_object, c2_1.copy())
+            c2_3 = calculation2_3(project_object, c2_2.copy())
+            context_data.append((disaster_name,
                                  c2_1.to_html(classes='table table-stripped'),
                                  c2_2.to_html(classes='table table-stripped'),
                                  c2_3.to_html(classes='table table-stripped'))
@@ -154,16 +150,16 @@ def calculations2_view(request, project_id):
 
 @login_required
 def calculations3_view(request, project_id):
-    _record = get_project_object(project_id)
-    if _record:
+    project_object = ProjectObject(project_id)
+    if project_object:
         context_data = []
-        for rez in calculation_expected_flows(_record):
+        for rez in calculation_expected_flows(project_object):
             context_data.append((rez['name'],
                                  rez['df'].to_html(
                                      classes='table table-stripped'),
                                  rez['df_discounted'].to_html(
                                      classes='table table-stripped'),
-                                 rez['nvp']
+                                 rez['npv']
                                  ))
         context = {'context_data': context_data}
         return render(request, 'baseapp/expected_folows.html', context)
@@ -172,15 +168,37 @@ def calculations3_view(request, project_id):
 
 @login_required
 def results_view(request, project_id):
-    _record = get_project_object(project_id)
-    if _record:
-        context_data = []
-        for rez in calculation_expected_flows(_record, test_mode=False):
-            context_data.append((rez['name'],
-                                 rez['nvp']
-                                 ))
-        context = {'context_data': context_data}
+    project_object = ProjectObject(project_id)
+    if project_object:
+        rows = [['Threshold below which risk is unaccetable (NPV)', 0],
+                ['Climate change impact (0%=no/low impact, 100%=high impact)',
+                 100],
+                ['Baseline scenario (0%=optimistic, 100%=pessimistic)', 0]]
+        table_parameters = table_view('PARAMETERS OF THE ANALYSIS', rows)
+
+        rows = []
+        for rez in calculation_expected_flows(project_object, test_mode=False):
+            rows.append([rez['name'], rez['npv']])
+        table_npv = table_view('NPV (USD, millions)', rows)
+
+        c_for_graph = calculations_from_database(project_object)
+
+        context = {'table_npv': table_npv,
+                   'table_parameters': table_parameters,
+                   'table_calculations_for_graph':
+                       c_for_graph.to_html(
+                           classes='table table-stripped')}
         return render(request, 'baseapp/results.html', context)
+    return HttpResponseRedirect(reverse('baseapp:home'))
+
+
+@login_required
+def calculate_view(request, project_id):
+    project_object = ProjectObject(project_id)
+    if project_object:
+        _data = calculations_for_graph(project_object)
+        calculations_to_database(project_object, _data)
+        return results_view(request, project_id)
     return HttpResponseRedirect(reverse('baseapp:home'))
 
 
@@ -201,7 +219,7 @@ class ProjectUpdateView(UpdateView):
         project_id = self.kwargs.get('pk', None)
         list_disaster_impacts = []
         if project_id:
-            for x in disaster_impacts_from_database(project_id):
+            for x in disasters_from_database(project_id):
                 list_disaster_impacts.append(
                     (f'disaster_impact/{x}/', x))
         max_col = len(list_disaster_impacts) if len(
@@ -255,3 +273,25 @@ class ProjectUpdateView(UpdateView):
                {tablebody}
                </tr> </tbody>
             </table>""".format(tablebody=tablebody)
+
+
+def table_view(name, rows, header=None):
+    tablebody = "  <p></p>\n  <tr>\n"
+    if header:
+        for column in header:
+            tablebody += f"    <th>{column}</th>\n"
+        tablebody += "  </tr>\n"
+
+    for row in rows:
+        tablebody += "  <tr>\n"
+        for column in row:
+            tablebody += f"    <td>{column}</td>\n"
+        tablebody += "  </tr>\n"
+
+    return f"""<p></p>
+            <h5>{name}</h5>
+            <table border=1 class ="table table" >
+               <tbody> <tr>
+               {tablebody}
+               </tr> </tbody>
+            </table>"""

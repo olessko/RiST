@@ -1,7 +1,11 @@
 from decimal import Decimal
 
-from .calculations import calculations_1_1, calculation_npv, calculation2
-from ..cruid import scenario_from_database, disaster_impacts_from_database
+import pandas as pd
+
+from .project_object import ProjectObject
+from .calculations import calculation2, calculations_1_1, \
+    calculations_1_2, calculation_npv
+from .time_contoller import time_controller
 
 v1 = 'Expected change in quantity produced (%)'
 v2 = 'Expected change in price (%)'
@@ -16,9 +20,8 @@ crosstable_vt = {v1: t1, v2: t1, v3: t2, v4: t3}
 INDEX_DF = ['cost', 'with_project', 'type_value']
 
 
-def to_prepare_result(project_object, df, test_mode=True):
-    start_year = project_object.start_year
-    for year in range(start_year, start_year + project_object.lifetime):
+def to_prepare_result(project_object: ProjectObject, df, test_mode=True):
+    for year in project_object.years():
         df[year] = df[year].map(lambda x: x.quantize(Decimal('1.00')))
     if test_mode:
         df = df.set_index(INDEX_DF)
@@ -27,46 +30,41 @@ def to_prepare_result(project_object, df, test_mode=True):
     return df
 
 
-def flows1(project_object, test_mode=True):
+@time_controller
+def flows1(project_object: ProjectObject, test_mode=True):
     """Baseline (including project pessimism but without climate impacts)"""
 
-    discount_rate = Decimal(project_object.discount_rate)
+    baseline_pessimism = Decimal(project_object.baseline_pessimism)
 
-    optimistic_scenario = scenario_from_database(
-        project_object.optimistic_scenario, project_object)
-    df_optimistic_scenario = optimistic_scenario['df']
+    optimistic_scenario = project_object.get_optimistic_scenario()
+    df_optimistic_scenario = optimistic_scenario['df'].copy()
     dfi_optimistic_scenario = optimistic_scenario['dfi']
 
-    pesimistic_scenario = scenario_from_database(
-        project_object.pesimistic_scenario, project_object)
-    df_pesimistic_scenario = pesimistic_scenario['df']
+    pesimistic_scenario = project_object.get_pesimistic_scenario()
+    df_pesimistic_scenario = pesimistic_scenario['df'].copy()
     dfi_pesimistic_scenario = pesimistic_scenario['dfi']
 
     dfi = {}
-    start_year = project_object.start_year
-    for year in range(start_year, start_year + project_object.lifetime):
-        dfi[year] = dfi_pesimistic_scenario[year] * discount_rate + \
-                    dfi_optimistic_scenario[year] * (1 - discount_rate)
+    for year in project_object.years():
+        dfi[year] = dfi_pesimistic_scenario[year] * baseline_pessimism + \
+                    dfi_optimistic_scenario[year] * (1 - baseline_pessimism)
         df_optimistic_scenario[year] = df_optimistic_scenario[year].map(
-            lambda x: x * (1 - discount_rate))
+            lambda x: x * (1 - baseline_pessimism))
         df_pesimistic_scenario[year] = df_pesimistic_scenario[year].map(
-            lambda x: x * discount_rate)
+            lambda x: x * baseline_pessimism)
 
     df = df_optimistic_scenario.append(df_pesimistic_scenario)
     df = df.groupby(by=INDEX_DF, as_index=False).sum()
     df = to_prepare_result(project_object, df, test_mode)
-
-    df_discounted, nvp = calculation_npv(project_object, df.copy(), dfi)
-    return df, df_discounted, nvp, dfi
+    return df, dfi
 
 
-def flows2i(project_object, df_ef1, with_project):
-
-    df = calculations_1_1(project_object, with_project, test_mode=False)
+def flows2i(project_object: ProjectObject, df_ef1, with_project):
+    df = calculations_1_1(project_object, with_project)
+    df = calculations_1_2(project_object, df)
     df['with_project'] = with_project
 
-    start_year = project_object.start_year
-    for year in range(start_year, start_year + project_object.lifetime):
+    for year in project_object.years():
         df[year] = df[year].map(lambda x: 1 + x)
     df['type_value'] = df['type_value'].map(
         lambda x: crosstable_vt.get(x, None))
@@ -81,101 +79,111 @@ def flows2i(project_object, df_ef1, with_project):
     df_k2 = df.query('type_value == @t2')
     df_k3 = df.query('type_value == @t3')
 
-    for year in range(start_year, start_year + project_object.lifetime):
-        k2 = df_k2[year].values[0]
-        k3 = df_k3[year].values[0]
-        df2[year] = df2.apply(
-            lambda x: x[year] * (k2 if x['type_value'] == t2 else k3), axis=1)
+    for year in project_object.years():
+        k = {t2: df_k2[year].values[0],
+             t3: df_k3[year].values[0]}
+        df2[year] = df2[year] * df2['type_value'].map(k)
 
     return df1.append(df2)
 
 
-def flows2(project_object, df_ef1, dfi, test_mode=True):
+@time_controller
+def flows2(project_object: ProjectObject, df_ef1, test_mode=True):
     """Impacts from changes in average climate"""
-    df = flows2i(project_object, df_ef1, True)
-    df = df.append(flows2i(project_object, df_ef1, False))
+    df = flows2i(project_object, df_ef1.copy(), True)
+    df = df.append(flows2i(project_object, df_ef1.copy(), False))
     df = to_prepare_result(project_object, df, test_mode)
-
-    df_discounted, nvp = calculation_npv(project_object, df.copy(), dfi)
-    return df, df_discounted, nvp
+    return df
 
 
-def flows3(project_object, disaster_impacts, df, dfi, test_mode=True):
+@time_controller
+def flows3(project_object: ProjectObject, disasters, df, dfi, test_mode=True):
     """Impacts from changes in average climate + disaster impacts """
 
-    df_c3 = calculation2(project_object, disaster_impacts[0], test_mode=False)
-    if len(disaster_impacts) > 1:
-        for i in range(1, len(disaster_impacts)):
-            df_c3.append(calculation2(project_object, disaster_impacts[i],
-                                      test_mode=False))
-        df_c3 = df_c3.groupby(by=['type_value'], as_index=False).sum()
-
-    tv = {'Impact on quantity produced (% of yearly output with project)': 0,
-          'Impact on quantity produced (% of yearly output without project)': 1,
-          'Reconstruction costs (CAPEX) (USD)': 2,
-          'Additional out-of-system impacts (USD)': 3
-          }
-    df_c3['id'] = df_c3.apply(
-        lambda x: tv.get(x['type_value'], 0), axis=1)
-    df_c3 = df_c3.set_index('id')
-    df_c3 = df_c3.sort_index(sort_remaining=True)
+    df_c3 = calculation2(project_object, disasters)
 
     df_v1 = df[df.type_value == t1]
     dfi3 = {}
-    start_year = project_object.start_year
-    for year in range(start_year, start_year + project_object.lifetime):
+    for year in project_object.years():
         k = df_c3[year].values
         df_v1[year] = df_v1.apply(
-            lambda x: x[year] * (1 + k[0] if x['with_project'] else k[1]),
+            lambda x: x[year] * (1 + k[0] if x['with_project'] else 1 + k[1]),
             axis=1)
         dfi3[year] = dfi[year] + k[2] + k[3]
 
     df = df_v1.append(df[df.type_value != t1])
     df = to_prepare_result(project_object, df, test_mode)
-
-    df_discounted, nvp = calculation_npv(project_object, df.copy(), dfi3)
-    return df, df_discounted, nvp
+    return df, dfi3
 
 
-def add_flow(list_nvp, test_mode, name, df, df_discounted, nvp):
+def add_flow(project_object, list_npv, test_mode, name, df, dfi):
     rez = {'name': name}
+    df_discounted, npv = calculation_npv(project_object, df.copy(), dfi)
     if test_mode:
-        rez['nvp'] = nvp
+        rez['npv'] = npv
         rez['df'] = df
         rez['df_discounted'] = df_discounted
     else:
-        rez['nvp'] = (nvp/1000000).quantize(Decimal('1.0'))
-    list_nvp.append(rez)
+        rez['npv'] = (npv / 1000000).quantize(Decimal('1.0'))
+    list_npv.append(rez)
 
 
-def calculation_expected_flows(project_object, test_mode=True):
-    list_nvp = []
+@time_controller
+def calculation_expected_flows(project_object: ProjectObject, test_mode=True):
+    list_npv = []
 
-    df_ef1, df_discounted, nvp, dfi = flows1(project_object, test_mode)
+    df_ef1, dfi = flows1(project_object, test_mode)
     add_flow(
-        list_nvp, test_mode,
+        project_object, list_npv, test_mode,
         'Baseline (including project pessimism but without climate impacts)',
-        df_ef1, df_discounted, nvp)
+        df_ef1, dfi)
 
-    df_ef2, df_discounted, nvp = flows2(project_object, df_ef1, dfi, test_mode)
+    df_ef2 = flows2(project_object, df_ef1, test_mode)
     add_flow(
-        list_nvp, test_mode,
+        project_object, list_npv, test_mode,
         'Impacts from changes in average climate',
-        df_ef2, df_discounted, nvp)
+        df_ef2, dfi)
 
     tasks = []
-    disaster_impact_all = []
-    for disaster_impact in disaster_impacts_from_database(project_object.id):
-        disaster_impact_all.append(disaster_impact)
-        tasks.append(([disaster_impact, ],
-                     f'Impacts from changes in average climate + disaster impacts ({disaster_impact})'))
-    tasks.append((disaster_impact_all,
-                 'Impacts from all climate and disaster risks'))
+    for disaster in project_object.get_disasters():
+        tasks.append(
+            ([disaster, ],
+             f'Impacts from changes in average climate + disaster impacts ({disaster})'))
+    tasks.append((project_object.get_disasters(),
+                  'Impacts from all climate and disaster risks'))
 
-    for disaster_impact, name_calculation in tasks:
-        df_ef3, df_discounted, nvp = flows3(project_object, disaster_impact,
-                                            df_ef2.copy(), dfi, test_mode)
+    for disaster, name_calculation in tasks:
+        df_ef3, dfi_3 = flows3(project_object, disaster, df_ef2.copy(), dfi,
+                               test_mode)
         add_flow(
-            list_nvp, test_mode, name_calculation, df_ef3, df_discounted, nvp)
+            project_object, list_npv, test_mode,
+            name_calculation, df_ef3, dfi_3)
 
-    return list_nvp
+    return list_npv
+
+
+@time_controller
+def calculation_expected_flows_npv_only(project_object: ProjectObject):
+    df, dfi = flows1(project_object, False)
+    df = flows2(project_object, df, False)
+    df, dfi = flows3(project_object, project_object.get_disasters(),
+                     df, dfi, False)
+    _, npv = calculation_npv(project_object, df, dfi)
+    return (npv / 1000000).quantize(Decimal('1.0'))
+
+
+@time_controller
+def calculations_for_graph(project_object: ProjectObject):
+    project_object.load_dataset()
+    _data = []
+    for level_of_climate_impact in range(0, 101, 10):
+        for baseline_pessimism in range(0, 101, 10):
+            project_object.set_sa(level_of_climate_impact / 100,
+                                  baseline_pessimism / 100)
+            _data.append(
+                {'baseline_pessimism': baseline_pessimism,
+                 'level_of_climate_impact': level_of_climate_impact,
+                 'value': calculation_expected_flows_npv_only(project_object)}
+            )
+    return _data
+

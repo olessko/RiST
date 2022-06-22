@@ -2,10 +2,11 @@ from django.contrib.auth.decorators import login_required
 from django.urls import path
 
 from .views import ProjectView, upload_project, delete_project_view, \
-    ProjectFormView, optimistic_scenario_view, \
-    pesimistic_scenario_view, climate_conditions_without_project_view, \
+    optimistic_scenario_view, pesimistic_scenario_view, \
+    climate_conditions_without_project_view, \
     climate_conditions_with_project_view, calculations1_view, ProjectUpdateView, \
-    disaster_impact_view, calculations2_view, calculations3_view, results_view
+    disaster_impact_view, calculations2_view, calculations3_view, results_view, \
+    calculate_view
 
 app_name = 'baseapp'
 
@@ -34,7 +35,7 @@ urlpatterns = [
          climate_conditions_without_project_view,
          name='climate_conditions_without_project_view'),
 
-    path(r'project_view/<project_id>/disaster_impact/<disaster_impact_name>/',
+    path(r'project_view/<project_id>/disaster_impact/<disaster_name>/',
          disaster_impact_view,
          name='disaster_impact_view'),
 
@@ -49,4 +50,8 @@ urlpatterns = [
 
     path(r'results/<project_id>/', results_view,
          name='results'),
+
+    path(r'calculate/<project_id>/', calculate_view,
+         name='calculate'),
+
 ]

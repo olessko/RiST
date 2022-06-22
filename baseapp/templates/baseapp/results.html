@@ -4,12 +4,14 @@
     <p></p>
     <h2>Results</h2>
 
-    {% for name, nvp in context_data %}
-        <p></p>
-        <p> CALCULATION: {{ name }} </p>
-        <p></p>
-        <p>NVP: {{ nvp }}</p>
+    {{ table_parameters|safe }}
 
-    {% endfor %}
+    {{ table_npv|safe }}
+
+    <p></p>
+    <h4>CALCULATIONS FOR GRAPHS</h4>
+    <p></p>
+    <h6>NPV (USD, millions) for different levels of climate impact and baseline pessimism</h6>
+    {{ table_calculations_for_graph|safe }}
 
 {% endblock %}

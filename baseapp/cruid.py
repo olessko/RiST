@@ -4,11 +4,7 @@ from .models import Project, ProjectInvestmentCost, Scenario, \
     InvestmentTypeValue, ScenarioData, ScenarioInvestmentData, \
     DisasterImpact, LevelDisasterImpact, ClimateImpactsTypeValue, \
     ChangeClimateCondition, ChangeDisasterImpact, SensitivityAnalysis, \
-    ProjectsDisasterImpact
-
-
-def get_project(name: str):
-    return Project.objects.filter(name=name).first()
+    ProjectsDisasterImpact, CalculationForGraph
 
 
 def get_project_object(_id: int):
@@ -182,7 +178,7 @@ def climat_parameters_to_database(project_data, project_object):
         get_climate_type_values(x['name'], x['section'])
 
 
-def disaster_impacts_from_database(project_id):
+def disasters_from_database(project_id):
     list_di = ProjectsDisasterImpact.objects.filter(
         project_id=project_id).order_by('id')
     return [x.disaster_impact.name for x in list_di]
@@ -226,6 +222,7 @@ def climate_conditions_from_database(project_object, with_project):
         section='climate_conditions').order_by('id')
     df_dict = {}
     num = 0
+    years = []
     for unit in unit_data:
         for cost in cost_data:
             for impact in [False, True]:
@@ -238,14 +235,17 @@ def climate_conditions_from_database(project_object, with_project):
                 if data:
                     line_dict = {'type_value': unit.name,
                                  'cost': cost.name,
-                                 'impact': impact}
+                                 'impact': impact,
+                                 'with_project': with_project}
                     for data_line in data:
                         line_dict[data_line.year] = data_line.value
+                        if num == 0:
+                            years.append(data_line.year)
                     df_dict[num] = line_dict
                     num += 1
 
     df = pd.DataFrame(df_dict)
-    return df.T
+    return df.T, years
 
 
 def change_disaster_impact_to_database(data_change_disaster_impact,
@@ -295,6 +295,7 @@ def change_disaster_impact_from_database(project_object, disaster_impact):
         section='disaster').order_by('id')
     df_dict = {}
     num = 0
+    years = []
     for level in level_data:
         for unit in unit_data:
             for impact in [False, True]:
@@ -311,11 +312,13 @@ def change_disaster_impact_from_database(project_object, disaster_impact):
                                  'impact': impact}
                     for data_line in data:
                         line_dict[data_line.year] = data_line.value
+                        if num == 0:
+                            years.append(data_line.year)
                     df_dict[num] = line_dict
                     num += 1
 
     df = pd.DataFrame(df_dict)
-    return df.T
+    return df.T, years
 
 
 def sensitivity_analysis_to_database(_data, project_object):
@@ -350,3 +353,29 @@ def sensitivity_analysis_from_database(project_object, section, disaster=None):
             data_dict[unit_data[i].name] = _data[i].value
 
     return data_dict
+
+
+def calculations_to_database(project_object, _data):
+    _record = get_project_object(project_object.id)
+    if _record:
+        for x in CalculationForGraph.objects.filter(
+                project_id=project_object.id):
+            x.delete()
+        for x in _data:
+            rec = CalculationForGraph(
+                project=_record,
+                baseline_pessimism=x.get('baseline_pessimism', 0),
+                level_of_climate_impact=x.get('level_of_climate_impact', 0),
+                value=x.get('value', 0))
+            rec.save()
+
+
+def calculations_from_database(project_object):
+    data_dict = {}
+    for x in CalculationForGraph.objects.filter(project_id=project_object.id):
+        level_line = data_dict.get(x.level_of_climate_impact, None)
+        if level_line is None:
+            level_line = {}
+        level_line[x.baseline_pessimism] = x.value
+        data_dict[x.level_of_climate_impact] = level_line
+    return pd.DataFrame(data_dict)
