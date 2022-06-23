@@ -4,7 +4,7 @@ from .models import Project, ProjectInvestmentCost, Scenario, \
     InvestmentTypeValue, ScenarioData, ScenarioInvestmentData, \
     DisasterImpact, LevelDisasterImpact, ClimateImpactsTypeValue, \
     ChangeClimateCondition, ChangeDisasterImpact, SensitivityAnalysis, \
-    ProjectsDisasterImpact, CalculationForGraph
+    ProjectsDisasterImpact, CalculationForGraph, AnalysisResult
 
 
 def get_project_object(project_id: int):
@@ -395,3 +395,31 @@ def calculations_from_database(project_object):
         level_line[x.baseline_pessimism] = x.value
         data_dict[x.level_of_climate_impact] = level_line
     return pd.DataFrame(data_dict)
+
+
+def analysis_result_to_database(project_object, _data, section):
+    _record = get_project_object(project_object.id)
+    if _record:
+        for x in AnalysisResult.objects.filter(
+                project_id=project_object.id, section=section):
+            x.delete()
+        for x in _data:
+            rec = AnalysisResult(
+                project=_record,
+                section=section,
+                type_value=x.get('type_value', ''),
+                level=x.get('level', 0),
+                value=x.get('value', 0))
+            rec.save()
+
+
+def analysis_result_from_database(project_object, section):
+    _data = []
+    for x in AnalysisResult.objects.filter(
+                project_id=project_object.id, section=section).order_by('id'):
+        _data.append({
+            'type_value': x.type_value,
+            'level': x.level,
+            'value': x.value
+        })
+    return _data

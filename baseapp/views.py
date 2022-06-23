@@ -13,7 +13,7 @@ from .calculations.project_object import ProjectObject
 from .forms import ProjectForm
 from .models import Project
 from .cruid import get_project_object, disasters_from_database, \
-    calculations_from_database
+    calculations_from_database, analysis_result_from_database
 from .parsers import read_from_exel
 from .tasks import calculations_task
 
@@ -155,12 +155,12 @@ def calculations3_view(request, project_id):
     if project_object:
         context_data = []
         for rez in calculation_expected_flows(project_object):
-            context_data.append((rez['name'],
+            context_data.append((rez['type_value'],
                                  rez['df'].to_html(
                                      classes='table table-stripped'),
                                  rez['df_discounted'].to_html(
                                      classes='table table-stripped'),
-                                 rez['npv']
+                                 rez['value']
                                  ))
         context = {'context_data': context_data}
         return render(request, 'baseapp/expected_folows.html', context)
@@ -178,8 +178,8 @@ def results_view(request, project_id):
         table_parameters = table_view('PARAMETERS OF THE ANALYSIS', rows)
 
         rows = []
-        for rez in calculation_expected_flows(project_object, test_mode=False):
-            rows.append([rez['name'], rez['npv']])
+        for rez in analysis_result_from_database(project_object, 'base'):
+            rows.append([rez['type_value'], rez['value']])
         table_npv = table_view('NPV (USD, millions)', rows)
 
         c_for_graph = calculations_from_database(project_object)

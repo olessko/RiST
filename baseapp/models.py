@@ -113,6 +113,15 @@ class SensitivityAnalysis(models.Model):
                                 blank=True, default=0)
 
 
+class AnalysisResult(models.Model):
+    project = models.ForeignKey('Project', on_delete=models.CASCADE)
+    section = models.CharField('section', blank=True, max_length=20)
+    type_value = models.CharField('type_value', blank=True, max_length=150)
+    level = models.IntegerField('level', blank=True, default=0)
+    value = models.DecimalField('value', max_digits=15, decimal_places=1,
+                                blank=True, default=0)
+
+
 class CalculationForGraph(models.Model):
     project = models.ForeignKey('Project', on_delete=models.CASCADE)
     baseline_pessimism = models.IntegerField('year', blank=True, default=0)

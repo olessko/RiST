@@ -117,14 +117,14 @@ def flows3(project_object: ProjectObject, disasters, df, dfi, test_mode=True):
 
 
 def add_flow(project_object, list_npv, test_mode, name, df, dfi):
-    rez = {'name': name}
+    rez = {'type_value': name}
     df_discounted, npv = calculation_npv(project_object, df.copy(), dfi)
     if test_mode:
-        rez['npv'] = npv
+        rez['value'] = npv
         rez['df'] = df
         rez['df_discounted'] = df_discounted
     else:
-        rez['npv'] = (npv / 1000000).quantize(Decimal('1.0'))
+        rez['value'] = (npv / 1000000).quantize(Decimal('1.0'))
     list_npv.append(rez)
 
 
