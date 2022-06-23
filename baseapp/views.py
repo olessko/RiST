@@ -8,12 +8,14 @@ from django_q.tasks import async_task
 
 from .calculations.calculations import calculations_1_1, calculations_1_2, \
     calculation_npv, calculation2_1, calculation2_2, calculation2_3
-from .calculations.expected_flows import calculation_expected_flows
+from .calculations.expected_flows import calculation_expected_flows, \
+    calculations_for_sensitivity_analysis
 from .calculations.project_object import ProjectObject
 from .forms import ProjectForm
 from .models import Project
 from .cruid import get_project_object, disasters_from_database, \
-    calculations_from_database, analysis_result_from_database
+    calculations_from_database, analysis_result_from_database, \
+    analysis_result_from_database_to_df
 from .parsers import read_from_exel
 from .tasks import calculations_task
 
@@ -183,11 +185,15 @@ def results_view(request, project_id):
         table_npv = table_view('NPV (USD, millions)', rows)
 
         c_for_graph = calculations_from_database(project_object)
-
+        # _data = calculations_for_sensitivity_analysis(project_object)
+        analysis_result = analysis_result_from_database_to_df(project_object,
+                                                              'sa')
         context = {'table_npv': table_npv,
                    'table_parameters': table_parameters,
                    'table_calculations_for_graph':
                        c_for_graph.to_html(
+                           classes='table table-stripped'),
+                   'analysis_result': analysis_result.to_html(
                            classes='table table-stripped')}
         return render(request, 'baseapp/results.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))
@@ -214,7 +220,7 @@ class ProjectUpdateView(UpdateView):
     fields = ['name', 'start_year', 'lifetime', 'discount_rate',
               'threshold_below_for_risk', 'level_of_climate_impact',
               'baseline_pessimism'
-    ]
+              ]
     template_name_suffix = '_update_form'
 
     def get_context_data(self, **kwargs):

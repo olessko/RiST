@@ -423,10 +423,31 @@ def analysis_result_to_database(project_object, _data, section):
 def analysis_result_from_database(project_object, section):
     _data = []
     for x in AnalysisResult.objects.filter(
-                project_id=project_object.id, section=section).order_by('id'):
+            project_id=project_object.id, section=section).order_by('id'):
         _data.append({
             'type_value': x.type_value,
             'level': x.level,
             'value': x.value
         })
     return _data
+
+
+def analysis_result_from_database_to_df(project_object, section):
+    _data = analysis_result_from_database(project_object, section)
+    df_dict = {}
+    if _data:
+        df_list = []
+        for x in _data:
+            type_value = x['type_value']
+            _dict = df_dict.get(type_value, None)
+            if _dict is None:
+                _dict = {'type_value': type_value}
+                df_list.append(_dict)
+                df_dict[type_value] = _dict
+            _dict[x['level']] = x['value']
+        df = pd.DataFrame(df_list)
+        df['k'] = df[0] - df[100]
+        df['k'] = df['k'].map(lambda x: x if x > 0 else -x)
+        return df
+    else:
+        return None

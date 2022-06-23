@@ -208,26 +208,41 @@ def calculations_for_sensitivity_analysis(project_object: ProjectObject):
                          'type_value': name,
                          'value': npv}
                     )
-
             elif section == 'disaster':
-                pass
+                for disaster in project_object.get_disasters():
+                    _name = type_value_data['name']
+                    name = f'{_name} ({disaster})'
+                    type_value = type_value_data['type_value']
+                    for level in range(0, 101, 25):
+                        project_object.set_climate_parametrs_by_name(
+                            section, type_value, level / 100, disaster=disaster)
+                        npv = calculation_expected_flows_npv_only(
+                            project_object)
+                        _data.append(
+                            {'section': section,
+                             'level': level,
+                             'type_value': name,
+                             'value': npv}
+                        )
             else:
-                pass
+                name = type_value_data
+                for level in range(0, 101, 25):
+                    project_object.reset_sa_from_project()
+                    if name == 'All climate impacts':
+                        project_object.set_sa(
+                            level, project_object.baseline_pessimism)
+                    elif name == 'Baseline scenario':
+                        project_object.sa.baseline_pessimism = level
+                    elif name == 'Discount rate':
+                        project_object.sa.discount_rate = level
+                    npv = calculation_expected_flows_npv_only(
+                        project_object)
+                    _data.append(
+                        {'section': section,
+                         'level': level,
+                         'type_value': name,
+                         'value': npv}
+                    )
     return _data
 
-
-@time_controller
-def calculations_for_sensitivity_analysis(project_object: ProjectObject):
-    project_object.load_dataset()
-    _data = []
-    for level_of_climate_impact in range(0, 101, 10):
-        for baseline_pessimism in range(0, 101, 10):
-            project_object.set_sa(level_of_climate_impact / 100,
-                                  baseline_pessimism / 100)
-            _data.append(
-                {'baseline_pessimism': baseline_pessimism,
-                 'level_of_climate_impact': level_of_climate_impact,
-                 'value': calculation_expected_flows_npv_only(project_object)}
-            )
-    return _data
 

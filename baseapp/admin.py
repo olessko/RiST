@@ -3,7 +3,8 @@ from django.contrib import admin
 from .models import Project, ProjectInvestmentCost, Scenario, \
     InvestmentTypeValue, ScenarioData, ScenarioInvestmentData, \
     DisasterImpact, LevelDisasterImpact, ClimateImpactsTypeValue, \
-    ChangeClimateCondition, ChangeDisasterImpact, SensitivityAnalysis
+    ChangeClimateCondition, ChangeDisasterImpact, SensitivityAnalysis, \
+    AnalysisResult
 
 
 class ProjectAdmin(admin.ModelAdmin):
@@ -92,3 +93,11 @@ class SensitivityAnalysisAdmin(admin.ModelAdmin):
 
 
 admin.site.register(SensitivityAnalysis, SensitivityAnalysisAdmin)
+
+
+class AnalysisResultAdmin(admin.ModelAdmin):
+    list_display = ('section', 'type_value', 'level',
+                    'value', 'project', 'id')
+
+
+admin.site.register(AnalysisResult, AnalysisResultAdmin)

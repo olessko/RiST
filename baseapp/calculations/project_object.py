@@ -37,7 +37,7 @@ class SensitivityAnalysisParametrs:
                                       disaster=None):
         decimal_value = Decimal(value)
         if section == 'climate_conditions':
-            self.climate_conditions[x] = decimal_value
+            self.climate_conditions[name] = decimal_value
         elif section == 'disaster':
             disaster_impact = self.disaster_impacts[disaster]
             disaster_impact['name'] = decimal_value
