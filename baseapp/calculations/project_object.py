@@ -11,6 +11,11 @@ class SensitivityAnalysisParametrs:
     def __init__(self, _id):
         _object = get_project_object(_id)
         if _object:
+            self.discount_rate = _object.discount_rate / 100
+            self.threshold_below_for_risk = _object.threshold_below_for_risk
+            self.level_of_climate_impact = _object.level_of_climate_impact / 100
+            self.baseline_pessimism = _object.baseline_pessimism / 100
+
             self.climate_conditions = sensitivity_analysis_from_database(
                 _object, 'climate_conditions')
             self.disaster_impacts = {}
@@ -19,7 +24,7 @@ class SensitivityAnalysisParametrs:
                     disaster] = sensitivity_analysis_from_database(
                     _object, 'disaster', disaster)
 
-    def set_parametrs(self, value):
+    def set_climate_parametrs(self, value):
         decimal_value = Decimal(value)
         for disaster in self.disaster_impacts.keys():
             disaster_impact = self.disaster_impacts[disaster]
@@ -27,6 +32,22 @@ class SensitivityAnalysisParametrs:
             disaster_impact['value'] = decimal_value
         for x in self.climate_conditions.keys():
             self.climate_conditions[x] = decimal_value
+
+    def set_climate_parametrs_by_name(self, section, name, value,
+                                      disaster=None):
+        decimal_value = Decimal(value)
+        if section == 'climate_conditions':
+            self.climate_conditions[x] = decimal_value
+        elif section == 'disaster':
+            disaster_impact = self.disaster_impacts[disaster]
+            disaster_impact['name'] = decimal_value
+        else:
+            if name == 'All climate impacts':
+                self.set_climate_parametrs(decimal_value)
+            elif name == 'Baseline scenario':
+                self.baseline_pessimism = decimal_value
+            elif name == 'Discount rate':
+                self.discount_rate = decimal_value
 
 
 class ProjectObject:
@@ -37,7 +58,10 @@ class ProjectObject:
             self.name = _object.name
             self.start_year = _object.start_year
             self.lifetime = _object.lifetime
-            self.discount_rate = _object.discount_rate
+            self.discount_rate = _object.discount_rate / 100
+            self.threshold_below_for_risk = _object.threshold_below_for_risk
+            self.level_of_climate_impact = _object.level_of_climate_impact / 100
+            self.baseline_pessimism = _object.baseline_pessimism / 100
 
         self.sa = SensitivityAnalysisParametrs(self.id)
         self.optimistic_scenario = None
@@ -47,8 +71,6 @@ class ProjectObject:
         self.disasters = None
         self.disaster_impacts = None
         self.disaster_impacts_years = None
-
-        self.set_sa(1, 0)
 
     def get_project_object(self):
         return get_project_object(self.id)
@@ -104,9 +126,21 @@ class ProjectObject:
             yield year
 
     def set_sa(self, level_of_climate_impact, baseline_pessimism):
-        self.level_of_climate_impact = level_of_climate_impact
-        self.sa.set_parametrs(self.level_of_climate_impact)
-        self.baseline_pessimism = baseline_pessimism
+        self.sa.level_of_climate_impact = level_of_climate_impact
+        self.sa.baseline_pessimism = baseline_pessimism
+        self.sa.set_climate_parametrs(self.level_of_climate_impact)
+
+    def reset_sa_from_project(self):
+        self.sa.discount_rate = self.discount_rate
+        self.sa.threshold_below_for_risk = self.threshold_below_for_risk
+        self.sa.level_of_climate_impact = self.level_of_climate_impact
+        self.sa.baseline_pessimism = self.baseline_pessimism
+        self.sa.set_climate_parametrs(self.level_of_climate_impact)
+
+    def set_climate_parametrs_by_name(self, section, name, value,
+                                      disaster=None):
+        self.reset_sa_from_project()
+        self.sa.set_climate_parametrs_by_name(section, name, value, disaster)
 
     def load_dataset(self):
         self.get_optimistic_scenario()

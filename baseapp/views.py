@@ -211,7 +211,10 @@ class ProjectFormView(FormView):
 
 class ProjectUpdateView(UpdateView):
     model = Project
-    fields = ['name', 'start_year', 'lifetime', 'discount_rate']
+    fields = ['name', 'start_year', 'lifetime', 'discount_rate',
+              'threshold_below_for_risk', 'level_of_climate_impact',
+              'baseline_pessimism'
+    ]
     template_name_suffix = '_update_form'
 
     def get_context_data(self, **kwargs):

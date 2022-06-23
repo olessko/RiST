@@ -239,7 +239,7 @@ def read_from_exel(filename, project_name):
     optimistic_scenario['end_row'] = optimistic_scenario['start_row'] + 33
     pesimistic_scenario['end_row'] = pesimistic_scenario['start_row'] + 33
 
-    project_data = {'discount_rate': float(sheet.cell(5, 4).value),
+    project_data = {'discount_rate': float(sheet.cell(5, 4).value) * 100,
                     'start_year': int(sheet.cell(4, 4).value),
                     'lifetime': 0,
                     'name': project_name,
@@ -265,6 +265,13 @@ def read_from_exel(filename, project_name):
     read_change_disaster_impact(project_data, wb)
 
     read_sensitivity_analysis(project_data, wb)
+
+    sheet = wb['Results']
+    col = 5
+    project_data['threshold_below_for_risk'] = float(sheet.cell(5, col).value)
+    project_data['level_of_climate_impact'] = float(
+        sheet.cell(6, col).value) * 100
+    project_data['baseline_pessimism'] = float(sheet.cell(7, col).value) * 100
 
     to_database(project_data)
 

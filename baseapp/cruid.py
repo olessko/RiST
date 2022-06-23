@@ -88,6 +88,13 @@ def to_database(project_data):
     project_object.start_year = project_data['start_year']
     project_object.lifetime = project_data['lifetime']
     project_object.discount_rate = project_data['discount_rate']
+
+    project_object.threshold_below_for_risk = project_data[
+        'threshold_below_for_risk']
+    project_object.level_of_climate_impact = project_data[
+        'level_of_climate_impact']
+    project_object.baseline_pessimism = project_data['baseline_pessimism']
+
     project_object.save()
 
     scenario_to_database(project_data['optimistic_scenario'],

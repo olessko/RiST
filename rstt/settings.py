@@ -149,9 +149,10 @@ AUTH_PASSWORD_VALIDATORS = [
 
 Q_CLUSTER = {
     'name': 'rstt-q',
+    'retry': 605,
     'workers': 4,
     'recycle': 500,
-    'timeout': 10000,
+    'timeout': 600,
     'compress': True,
     'save_limit': 250,
     'queue_limit': 500,

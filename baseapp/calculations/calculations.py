@@ -169,8 +169,9 @@ def calculation_npv(project_object: ProjectObject, df, invesment_dict,
     df = df.append(invesment_dict, ignore_index=True)
     df = df.groupby(by=['discounted'], as_index=False).sum()
 
+    discount_rate = Decimal(project_object.sa.discount_rate)
     for year in project_object.years():
-        k = pow(Decimal(1 + project_object.discount_rate),
+        k = pow(Decimal(1 + discount_rate),
                 Decimal(year + 1 - project_object.start_year))
         df[year] = df.apply(lambda x: (x[year] / k).quantize(Decimal('1.00')),
                             axis=1)

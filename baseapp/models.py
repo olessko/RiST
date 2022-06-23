@@ -5,7 +5,19 @@ class Project(models.Model):
     name = models.CharField('name', blank=True, max_length=200)
     start_year = models.IntegerField('start year', blank=True, default=0)
     lifetime = models.IntegerField('lifetime', blank=True, default=0)
-    discount_rate = models.FloatField('discount rate', blank=True, default=0)
+    discount_rate = models.DecimalField(
+        'discount rate',
+        max_digits=7, decimal_places=1, blank=True, default=0)
+    threshold_below_for_risk = models.DecimalField(
+        'Threshold below which risk is unaccetable (NPV)',
+        max_digits=7, decimal_places=1, blank=True, default=0)
+    level_of_climate_impact = models.DecimalField(
+        'Climate change impact (0%=no/low impact, 100%=high impact)',
+        max_digits=7, decimal_places=1, blank=True, default=0)
+    baseline_pessimism = models.DecimalField(
+        'Baseline scenario (0%=optimistic, 100%=pessimistic)',
+        max_digits=7, decimal_places=1, blank=True, default=0)
+
     calculated = models.BooleanField(default=False)
     is_calculate = models.BooleanField(default=False)
 

@@ -1,7 +1,6 @@
 from decimal import Decimal
 
-import pandas as pd
-
+from . import SA_CROSS_TABLE
 from .project_object import ProjectObject
 from .calculations import calculation2, calculations_1_1, \
     calculations_1_2, calculation_npv
@@ -34,7 +33,7 @@ def to_prepare_result(project_object: ProjectObject, df, test_mode=True):
 def flows1(project_object: ProjectObject, test_mode=True):
     """Baseline (including project pessimism but without climate impacts)"""
 
-    baseline_pessimism = Decimal(project_object.baseline_pessimism)
+    baseline_pessimism = Decimal(project_object.sa.baseline_pessimism)
 
     optimistic_scenario = project_object.get_optimistic_scenario()
     df_optimistic_scenario = optimistic_scenario['df'].copy()
@@ -174,6 +173,51 @@ def calculation_expected_flows_npv_only(project_object: ProjectObject):
 
 @time_controller
 def calculations_for_graph(project_object: ProjectObject):
+    project_object.load_dataset()
+    project_object.reset_sa_from_project()
+    _data = []
+    for level_of_climate_impact in range(0, 101, 10):
+        for baseline_pessimism in range(0, 101, 10):
+            project_object.set_sa(level_of_climate_impact / 100,
+                                  baseline_pessimism / 100)
+            _data.append(
+                {'baseline_pessimism': baseline_pessimism,
+                 'level_of_climate_impact': level_of_climate_impact,
+                 'value': calculation_expected_flows_npv_only(project_object)}
+            )
+    return _data
+
+
+@time_controller
+def calculations_for_sensitivity_analysis(project_object: ProjectObject):
+    project_object.load_dataset()
+    _data = []
+    for section_data in SA_CROSS_TABLE:
+        section = section_data['section']
+        for type_value_data in section_data['parameters']:
+            if section == 'climate_conditions':
+                name = type_value_data['name']
+                type_value = type_value_data['type_value']
+                for level in range(0, 101, 25):
+                    project_object.set_climate_parametrs_by_name(
+                        section, type_value, level / 100)
+                    npv = calculation_expected_flows_npv_only(project_object)
+                    _data.append(
+                        {'section': section,
+                         'level': level,
+                         'type_value': name,
+                         'value': npv}
+                    )
+
+            elif section == 'disaster':
+                pass
+            else:
+                pass
+    return _data
+
+
+@time_controller
+def calculations_for_sensitivity_analysis(project_object: ProjectObject):
     project_object.load_dataset()
     _data = []
     for level_of_climate_impact in range(0, 101, 10):
