@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'baseapp',
-    'accounts'
+    'accounts',
+    'django_q',
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -146,6 +147,22 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+Q_CLUSTER = {
+    'name': 'rstt-q',
+    'workers': 4,
+    'recycle': 500,
+    'timeout': 10000,
+    'compress': True,
+    'save_limit': 250,
+    'queue_limit': 500,
+    'cpu_affinity': 1,
+    'label': 'Django Q',
+    'orm': 'default',
+    # 'redis': {
+    #     'host': '127.0.0.1',
+    #     'port': 6379,
+    #     'db': 0, }
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/

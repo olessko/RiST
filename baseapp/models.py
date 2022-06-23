@@ -6,6 +6,8 @@ class Project(models.Model):
     start_year = models.IntegerField('start year', blank=True, default=0)
     lifetime = models.IntegerField('lifetime', blank=True, default=0)
     discount_rate = models.FloatField('discount rate', blank=True, default=0)
+    calculated = models.BooleanField(default=False)
+    is_calculate = models.BooleanField(default=False)
 
     optimistic_scenario = models.OneToOneField(
         'Scenario',
@@ -30,7 +32,6 @@ class ProjectInvestmentCost(models.Model):
 
 class Scenario(models.Model):
     name = models.CharField('name', blank=True, max_length=200)
-    # project = models.ForeignKey('Project', on_delete=models.CASCADE)
 
 
 class InvestmentTypeValue(models.Model):

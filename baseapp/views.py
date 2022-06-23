@@ -4,17 +4,18 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.views.generic import ListView
 from django.views.generic.edit import FormView, UpdateView
+from django_q.tasks import async_task
 
 from .calculations.calculations import calculations_1_1, calculations_1_2, \
     calculation_npv, calculation2_1, calculation2_2, calculation2_3
-from .calculations.expected_flows import calculation_expected_flows, \
-    calculations_for_graph
+from .calculations.expected_flows import calculation_expected_flows
 from .calculations.project_object import ProjectObject
 from .forms import ProjectForm
 from .models import Project
 from .cruid import get_project_object, disasters_from_database, \
-    calculations_to_database, calculations_from_database
+    calculations_from_database
 from .parsers import read_from_exel
+from .tasks import calculations_task
 
 
 class ProjectView(ListView):
@@ -196,8 +197,8 @@ def results_view(request, project_id):
 def calculate_view(request, project_id):
     project_object = ProjectObject(project_id)
     if project_object:
-        _data = calculations_for_graph(project_object)
-        calculations_to_database(project_object, _data)
+        opts = {'timeout': 600}
+        async_task(calculations_task, project_id, q_options=opts)
         return results_view(request, project_id)
     return HttpResponseRedirect(reverse('baseapp:home'))
 

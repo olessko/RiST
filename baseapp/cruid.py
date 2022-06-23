@@ -7,8 +7,24 @@ from .models import Project, ProjectInvestmentCost, Scenario, \
     ProjectsDisasterImpact, CalculationForGraph
 
 
-def get_project_object(_id: int):
-    return Project.objects.filter(pk=_id).first()
+def get_project_object(project_id: int):
+    return Project.objects.filter(pk=project_id).first()
+
+
+def set_project_status(project_id: int, is_calculate, calculated=None):
+    rec = get_project_object(project_id)
+    if rec:
+        rec.is_calculate = is_calculate
+        if calculated:
+            rec.calculated = calculated
+        rec.save()
+
+
+def set_project_calculated(project_id: int, _data):
+    rec = get_project_object(project_id)
+    if rec:
+        rec.calculated = _data
+        rec.save()
 
 
 def get_project_investment_cost(name, project_object):
