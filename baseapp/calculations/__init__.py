@@ -11,6 +11,7 @@ SA_CROSS_TABLE = [
          {'name': 'Labor costs',
           'type_value': 'Impacts from changes in average climate on labor costs (0 - 100%)'}
      ]},
+
     {'section': 'disaster',
      'parameters': [
          {'name': 'Magnitude of extreme event impacts',
@@ -19,10 +20,10 @@ SA_CROSS_TABLE = [
          {'name': 'Change in extreme event frequency',
           'type_value': 'year'}
      ]},
+
     {'section': 'another',
      'parameters': [
          'All climate impacts',
-         'Baseline scenario',
-         # 'Discount rate'
+         'Baseline scenario'
      ]}
     ]

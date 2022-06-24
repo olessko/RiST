@@ -203,7 +203,7 @@ def calculations_for_sensitivity_analysis(project_object: ProjectObject):
                         section, type_value, level / 100)
                     npv = calculation_expected_flows_npv_only(project_object)
                     _data.append(
-                        {'section': section,
+                        {'section': 'sa',
                          'level': level,
                          'type_value': name,
                          'value': npv}
@@ -219,7 +219,7 @@ def calculations_for_sensitivity_analysis(project_object: ProjectObject):
                         npv = calculation_expected_flows_npv_only(
                             project_object)
                         _data.append(
-                            {'section': section,
+                            {'section': 'sa',
                              'level': level,
                              'type_value': name,
                              'value': npv}
@@ -230,11 +230,10 @@ def calculations_for_sensitivity_analysis(project_object: ProjectObject):
                     project_object.reset_sa_from_project()
                     if name == 'All climate impacts':
                         project_object.set_sa(
-                            level, project_object.baseline_pessimism)
+                            level / 100, project_object.baseline_pessimism)
                     elif name == 'Baseline scenario':
-                        project_object.sa.baseline_pessimism = level
-                    elif name == 'Discount rate':
-                        project_object.sa.discount_rate = level
+                        project_object.sa.baseline_pessimism = level / 100
+
                     npv = calculation_expected_flows_npv_only(
                         project_object)
                     _data.append(
@@ -243,6 +242,24 @@ def calculations_for_sensitivity_analysis(project_object: ProjectObject):
                          'type_value': name,
                          'value': npv}
                     )
+    return _data
+
+
+@time_controller
+def calculations_for_sa_discount_rate(project_object: ProjectObject):
+    project_object.load_dataset()
+    _data = []
+    name = 'discount_rate'
+    for level in [1, 2, 3, 6, 8, 12]:
+        project_object.reset_sa_from_project()
+        project_object.sa.discount_rate = level / 100
+        npv = calculation_expected_flows_npv_only(project_object)
+        _data.append(
+            {'section': name,
+             'level': level,
+             'type_value': name,
+             'value': npv}
+        )
     return _data
 
 

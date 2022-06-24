@@ -188,12 +188,17 @@ def results_view(request, project_id):
         # _data = calculations_for_sensitivity_analysis(project_object)
         analysis_result = analysis_result_from_database_to_df(project_object,
                                                               'sa')
+        discount_rate_result = analysis_result_from_database_to_df(
+            project_object, 'discount_rate')
+
         context = {'table_npv': table_npv,
                    'table_parameters': table_parameters,
                    'table_calculations_for_graph':
                        c_for_graph.to_html(
                            classes='table table-stripped'),
                    'analysis_result': analysis_result.to_html(
+                           classes='table table-stripped'),
+                   'discount_rate_result': discount_rate_result.to_html(
                            classes='table table-stripped')}
         return render(request, 'baseapp/results.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))

@@ -446,8 +446,11 @@ def analysis_result_from_database_to_df(project_object, section):
                 df_dict[type_value] = _dict
             _dict[x['level']] = x['value']
         df = pd.DataFrame(df_list)
-        df['k'] = df[0] - df[100]
+        if section == 'discount_rate':
+            df['k'] = df[1] - df[12]
+        else:
+            df['k'] = df[0] - df[100]
         df['k'] = df['k'].map(lambda x: x if x > 0 else -x)
         return df
     else:
-        return None
+        return pd.DataFrame()
