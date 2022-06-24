@@ -57,12 +57,13 @@ def get_chart_graph(project_object):
     df = calculations_from_database(project_object)
     pyplot.switch_backend('AGG')
     pyplot.style.use('_mpl-gallery')
-    fig = pyplot.figure(figsize=(5, 5))
+    fig = pyplot.figure(figsize=(6, 5))
     levels = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-    pyplot.contourf(levels, levels, df)
+    cp = pyplot.contourf(levels, levels, df)
     pyplot.xlabel('Baseline scenario 0% = optimistic, 100% = pessimistic')
     # pyplot.gca().invert_yaxis()
     pyplot.ylabel('0% = no/low impact, 100% high impact')
+    fig.colorbar(cp)
 
     pyplot.tight_layout()
     chart = get_graph()
