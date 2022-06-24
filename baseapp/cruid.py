@@ -401,7 +401,7 @@ def calculations_from_database(project_object):
             level_line = {}
         level_line[x.baseline_pessimism] = x.value
         data_dict[x.level_of_climate_impact] = level_line
-    return pd.DataFrame(data_dict)
+    return pd.DataFrame(data_dict).T
 
 
 def analysis_result_to_database(project_object, _data, section):

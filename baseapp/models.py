@@ -136,7 +136,9 @@ class AnalysisResult(models.Model):
 
 class CalculationForGraph(models.Model):
     project = models.ForeignKey('Project', on_delete=models.CASCADE)
-    baseline_pessimism = models.IntegerField('year', blank=True, default=0)
-    level_of_climate_impact = models.IntegerField('year', blank=True, default=0)
+    baseline_pessimism = models.IntegerField('baseline pessimism', blank=True,
+                                             default=0)
+    level_of_climate_impact = models.IntegerField('level of climate impact',
+                                                  blank=True, default=0)
     value = models.DecimalField('value', max_digits=15, decimal_places=1,
                                 blank=True, default=0)

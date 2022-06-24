@@ -4,7 +4,7 @@ from .models import Project, ProjectInvestmentCost, Scenario, \
     InvestmentTypeValue, ScenarioData, ScenarioInvestmentData, \
     DisasterImpact, LevelDisasterImpact, ClimateImpactsTypeValue, \
     ChangeClimateCondition, ChangeDisasterImpact, SensitivityAnalysis, \
-    AnalysisResult
+    AnalysisResult, CalculationForGraph
 
 
 class ProjectAdmin(admin.ModelAdmin):
@@ -101,3 +101,11 @@ class AnalysisResultAdmin(admin.ModelAdmin):
 
 
 admin.site.register(AnalysisResult, AnalysisResultAdmin)
+
+
+class CalculationForGraphAdmin(admin.ModelAdmin):
+    list_display = ('baseline_pessimism', 'level_of_climate_impact',
+                    'value', 'project', 'id')
+
+
+admin.site.register(CalculationForGraph, CalculationForGraphAdmin)
