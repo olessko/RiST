@@ -18,6 +18,7 @@ from .cruid import get_project_object, disasters_from_database, \
     analysis_result_from_database_to_df
 from .parsers import read_from_exel
 from .tasks import calculations_task
+from .utils import get_chart_discount_rate, get_chart_sa
 
 
 class ProjectView(ListView):
@@ -199,7 +200,11 @@ def results_view(request, project_id):
                    'analysis_result': analysis_result.to_html(
                            classes='table table-stripped'),
                    'discount_rate_result': discount_rate_result.to_html(
-                           classes='table table-stripped')}
+                           classes='table table-stripped'),
+                   'chart_discount_rate': get_chart_discount_rate(
+                       project_object),
+                   'chart_analysis_result': get_chart_sa(project_object),
+                   }
         return render(request, 'baseapp/results.html', context)
     return HttpResponseRedirect(reverse('baseapp:home'))
 
@@ -304,7 +309,7 @@ def table_view(name, rows, header=None):
         tablebody += "  </tr>\n"
 
     return f"""<p></p>
-            <h5>{name}</h5>
+            <h6>{name}</h6>
             <table border=1 class ="table table" >
                <tbody> <tr>
                {tablebody}

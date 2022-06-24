@@ -454,3 +454,9 @@ def analysis_result_from_database_to_df(project_object, section):
         return df
     else:
         return pd.DataFrame()
+
+
+def analysis_result_from_database_to_df_for_plot(project_object, section):
+    _data = analysis_result_from_database(project_object, section)
+    df = pd.DataFrame(_data)
+    return df

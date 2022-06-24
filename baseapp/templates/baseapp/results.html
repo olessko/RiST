@@ -8,22 +8,32 @@
 
     {{ table_npv|safe }}
 
+    <h4> </h4>
+    <h4>Sensitivity analysis - role of the discount rate</h4>
     <p></p>
-    <h4>CALCULATIONS FOR GRAPHS</h4>
+    <img src="data:image/png;base64, {{chart_discount_rate|safe}}" alt="" id="img">
     <p></p>
-    <h6>NPV (USD, millions) for different levels of climate impact and baseline pessimism</h6>
-    {{ table_calculations_for_graph|safe }}
+    <h6>CALCULATIONS</h6>
+    <p></p>
+    <h6>NPV (USD, millions) for different levels</h6>
+    {{ discount_rate_result|safe }}
 
+    <h4> </h4>
+    <h4>Sensitivity analysis - change in NPV when going from 0 to 100% climate impact / baseline pessimism</h4>
     <p></p>
-    <h4>CALCULATIONS FOR Sensitivity analysis</h4>
+    <img src="data:image/png;base64, {{chart_analysis_result|safe}}" alt="" id="img">
+    <p></p>
+    <h6>CALCULATIONS</h6>
     <p></p>
     <h6>NPV (USD, millions) for different levels</h6>
     {{ analysis_result|safe }}
 
+    <h4> </h4>
+    <img src="data:image/png;base64, {{chart_graph|safe}}" alt="" id="img">    <p></p>
+    <h5>CALCULATIONS FOR GRAPHS</h5>
     <p></p>
-    <h4>CALCULATIONS FOR Sensitivity analysis discount rate</h4>
-    <p></p>
-    <h6>NPV (USD, millions) for different levels</h6>
-    {{ discount_rate_result|safe }}
+    <h6>NPV (USD, millions) for different levels of climate impact and baseline pessimism</h6>
+    {{ table_calculations_for_graph|safe }}
+
 
 {% endblock %}
