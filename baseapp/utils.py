@@ -59,7 +59,7 @@ def get_chart_graph(project_object):
     pyplot.style.use('_mpl-gallery')
     fig = pyplot.figure(figsize=(5, 5))
     levels = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
-    pyplot.contourf(df.values, levels=levels)
+    pyplot.contourf(levels, levels, df)
     pyplot.xlabel('Baseline scenario 0% = optimistic, 100% = pessimistic')
     # pyplot.gca().invert_yaxis()
     pyplot.ylabel('0% = no/low impact, 100% high impact')
