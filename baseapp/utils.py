@@ -3,7 +3,7 @@ from io import BytesIO
 from matplotlib import pyplot
 
 from .cruid import analysis_result_from_database_to_df, \
-    analysis_result_from_database_to_df_for_plot
+    analysis_result_from_database_to_df_for_plot, calculations_from_database
 
 
 def generate_code():
@@ -20,26 +20,6 @@ def get_graph():
     buffer.close()
     return graph
 
-
-# def get_chart(chart_type, data, results_by, **kwargs):
-#     pyplot.switch_backend('AGG')
-#     fig = pyplot.figure(figsize=(10, 4))
-#     key = get_key(results_by)
-#     d = data.groupby(key, as_index=False)['total_price'].agg('sum')
-#     if chart_type == '#1':
-#         print("Bar graph")
-#         pyplot.bar(d[key], d['total_price'])
-#     elif chart_type == '#2':
-#         print("Pie chart")
-#         pyplot.pie(data=d,x='total_price', labels=d[key])
-#     elif chart_type == '#3':
-#         print("Line graph")
-#         pyplot.plot(d[key], d['total_price'], color='gray', marker='o', linestyle='dashed')
-#     else:
-#         print("Apparently...chart_type not identified")
-#     pyplot.tight_layout()
-#     chart = get_graph()
-#     return chart
 
 def get_chart_discount_rate(project_object):
     df = analysis_result_from_database_to_df_for_plot(project_object,
@@ -67,6 +47,22 @@ def get_chart_sa(project_object):
     pyplot.barh(position, value)
     pyplot.xlabel('NPV(USD, millions)')
     pyplot.gca().invert_yaxis()
+
+    pyplot.tight_layout()
+    chart = get_graph()
+    return chart
+
+
+def get_chart_graph(project_object):
+    df = calculations_from_database(project_object)
+    pyplot.switch_backend('AGG')
+    pyplot.style.use('_mpl-gallery')
+    fig = pyplot.figure(figsize=(5, 5))
+    levels = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+    pyplot.contourf(df.values, levels=levels)
+    pyplot.xlabel('Baseline scenario 0% = optimistic, 100% = pessimistic')
+    # pyplot.gca().invert_yaxis()
+    pyplot.ylabel('0% = no/low impact, 100% high impact')
 
     pyplot.tight_layout()
     chart = get_graph()
