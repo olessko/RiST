@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views.generic import ListView
 from django.views.generic.edit import FormView, UpdateView
 from django_q.tasks import async_task
@@ -216,14 +216,13 @@ def calculate_view(request, project_id):
     if project_object:
         opts = {'timeout': 600}
         async_task(calculations_task, project_id, q_options=opts)
-        return results_view(request, project_id)
     return HttpResponseRedirect(reverse('baseapp:home'))
 
 
 class ProjectFormView(FormView):
     template_name = 'baseapp/project_view.html'
     form_class = ProjectForm
-    success_url = '/'
+    success_url = reverse_lazy('baseapp:home')
 
 
 class ProjectUpdateView(UpdateView):

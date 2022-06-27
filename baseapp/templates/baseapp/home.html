@@ -11,7 +11,10 @@
             </button>
         </ul>
 
-        <table class="table">
+        <table class="table" id="table"
+               data-show-refresh="true"
+               data-auto-refresh="true"
+               data-pagination="true">
             <thead>
             <tr>
                 <th scope="col">Project id</th>
@@ -51,42 +54,81 @@
                            href="calculations3/{{ item.id }}/"
                            role="button">Expected flows</a>
                     </td>
-                    <td>
-                        <a class="btn btn-outline-secondary btn-sm-dark"
-                           href="calculate/{{ item.id }}/"
-                           role="button">Calculate</a>
-                    </td>
-                    <td>
-                        <a class="btn btn-outline-secondary btn-sm-dark"
-                           href="results/{{ item.id }}/"
-                           role="button">Results</a>
-                    </td>
 
-                    <td>
-                        <a class="btn btn-secondary btn-sm-dark"
-                           href="project_delete/{{ item.id }}/"
-                           role="button">Delete</a>
-                    </td>
+                    {% if item.is_calculate %}
+                        <td>
+                            <button class="btn btn-primary" type="button"
+                                    disabled>
+                                    <span class="spinner-border spinner-border-sm"
+                                          role="status"
+                                          aria-hidden="true"></span>
+                                <span class="visually-hidden">Calculate...</span>
+                            </button>
+                        </td>
+                    {% else %}
+                        <td>
+                            <a class="btn btn-outline-secondary btn-sm-dark"
+                               href="calculate/{{ item.id }}/"
+                               role="button">Calculate</a>
+                        </td>
+                    {% endif %}
+                    {% if item.is_calculate %}
+                        <td>
+                            <button class="btn btn-primary" type="button"
+                                    disabled>
+                                    <span class="spinner-border spinner-border-sm"
+                                          role="status"
+                                          aria-hidden="true"></span>
+                                <span class="visually-hidden">Calculate...</span>
+                            </button>
+                        </td>
+                    {% else %}
+                        <td>
+                            <a class="btn btn-outline-secondary btn-sm-dark"
+                               href="results/{{ item.id }}/"
+                               role="button">Results</a>
+                        </td>
+                    {% endif %}
+                    {% if item.is_calculate %}
+                        <td>
+                            <button class="btn btn-primary" type="button"
+                                    disabled>
+                                    <span class="spinner-border spinner-border-sm"
+                                          role="status"
+                                          aria-hidden="true"></span>
+                                <span class="visually-hidden">Calculate...</span>
+                            </button>
+                        </td>
+                    {% else %}
+                        <td>
+                            <a class="btn btn-secondary btn-sm-dark"
+                               href="project_delete/{{ item.id }}/"
+                               role="button">Delete</a>
+                        </td>
+                    {% endif %}
                 </tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
-        <!-- Modal -->
+    <!-- Modal -->
     <div class="modal fade" id="NewProjectModal" tabindex="-1"
          aria-labelledby="NewProjectLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="NewProjectLabel">New project</h5>
+                    <h5 class="modal-title" id="NewProjectLabel">New
+                        project</h5>
                     <button type="button" class="btn-close"
                             data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="load_project/" method="post" enctype="multipart/form-data">
+                    <form action="load_project/" method="post"
+                          enctype="multipart/form-data">
                         {% csrf_token %}
-                        <input type="file" name="project_file" accept=".xls,.xlsx">
-{#                        {{ form.as_p }}#}
+                        <input type="file" name="project_file"
+                               accept=".xls,.xlsx">
+                        {#                        {{ form.as_p }}#}
                         <div class="modal-footer">
                             <div class="form-group row my-4">
                                 <div class="col-sm-offset-10 mx-auto">

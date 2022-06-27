@@ -1,4 +1,5 @@
 from django.db import models
+from django.urls import reverse
 
 
 class Project(models.Model):
@@ -32,6 +33,9 @@ class Project(models.Model):
         return f"""Project: {self.name}, 
         start year: {self.start_year}, 
         lifetime:{self.lifetime}"""
+
+    def get_absolute_url(self):
+        return reverse('baseapp:project_view', kwargs={'pk': self.pk})
 
     class Meta:
         ordering = ('-start_year',)
